@@ -9,12 +9,14 @@
         margin-bottom: 8px;
       "
     >
-      <template v-if="rightCn - wrongCn > 0">
+      <template>
         <font-awesome-icon
-          v-for="i in rightCn - wrongCn"
+          v-for="i in config.passNum"
           :key="i"
           icon="star"
           fixed-width
+          class="star"
+          :class="{ enable: rightCn - wrongCn >= i }"
       /></template>
     </div>
     <div
@@ -55,7 +57,7 @@
             class="card__front"
             style="cursor: pointer"
             :style="{
-              backgroundImage: `url(${item.img + '&cache=0'})`,
+              backgroundImage: `url(${getImgUrl(item)})`,
             }"
           ></figure>
         </div>
@@ -247,7 +249,7 @@ export default {
       letters: [],
       isCorrect: 0,
       refresing: 0,
-      dictList: storejs.get("dicts") || [],
+
       syning: 0,
       lastYesIndex: -1,
       refreshing: false,
@@ -292,8 +294,15 @@ export default {
       const { rightCn, wrongCn } = this;
       return { rightCn, wrongCn };
     },
+    dictList() {
+      return this.items || [];
+    },
   },
   methods: {
+    getImgUrl(item) {
+      if (item.img) return item.img;
+      if (item.en) return item.imgBase + item.en + ".jpg";
+    },
     count(item, v) {
       if (!this.config.countMap) this.config.countMap = {};
       if (!this.config.countMap[this.lan]) {
@@ -348,7 +357,7 @@ export default {
         try {
           await new Promise((resolve, reject) => {
             $.ajax({
-              url: "https://smlog.github.io/data/dict.js",
+              url: self.config.url,
               dataType: "jsonp",
               jsonpCallback: "cb",
             })
@@ -356,22 +365,12 @@ export default {
                 //console.log(data);
                 let dictList = self.dictList;
                 let init = dictList.length == 0;
-                let cmap = dictList.reduce((m, c) => {
-                  m[c.en] = c.c == undefined ? 0 : c.c;
-                  return m;
-                }, {});
-                dictList.length = 0;
-                let obj = JSON.parse(pako.ungzip(atob(data), { to: "string" }));
-                Object.assign(self.config, obj.config || {});
-                console.log(self.config);
-                self.saveConfig();
-                dictList.push(...obj["items"]);
-                dictList.forEach((e) => {
-                  e.c = cmap[e.en] == undefined ? 0 : cmap[e.en];
-                });
-                if (init) self.randList();
-                storejs.set("dicts", dictList);
 
+                let obj = JSON.parse(pako.ungzip(atob(data), { to: "string" }));
+                self.saveItems(obj.items || []);
+                if (init) self.randList();
+                self.saveConfig(obj.config || {});
+                console.log(obj.config);
                 //  this.syning = 0;
                 resolve();
               })
@@ -407,7 +406,7 @@ export default {
               await new Promise((resolve) => setTimeout(resolve, 1000));
               //await this.randList();
             })();
-          } else if (this.isCorrect == 2) this.say("no", "en");
+          } else if (this.isCorrect == 2) this.say(this.getWrongSetence());
         }
       }
     },
@@ -468,7 +467,7 @@ export default {
           this.curAct = 1;
           this.count(item, this.count(item) + 1);
         }
-        await this.say(targetText, this.lan);
+        await this.say(targetText);
 
         if (this.rightCn - this.wrongCn >= this.config.passNum) {
           this.rightCn = 0;
@@ -479,7 +478,7 @@ export default {
           await this.randList();
         }
       } else {
-        await this.say(targetText, this.lan);
+        await this.say(targetText);
 
         this.wrongCn++;
         this.curAct = -1;
@@ -547,59 +546,49 @@ export default {
       this.speaking = true;
 
       let _this = this;
-      return new Promise((resolve) => {
-        let base = `https://fanyi.baidu.com/gettts?lan=${encodeURIComponent(
-          lan
-        )}&text=${encodeURIComponent(str.trim())}&spd=3&source=web&cache=0`;
-
-        if (this.lan == "en" && localStorage.sound == "YD") {
-          base = `https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(
+      let ttslist = [];
+      if (this.config.ttsBase != undefined) {
+        ttslist.push(
+          this.config.ttsBase +
+            this.lan +
+            "/" +
+            encodeURIComponent(str.trim()) +
+            ".mp3"
+        );
+      }
+      if (this.lan == "en" && this.config.sound == "YD") {
+        ttslist.push(
+          `https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(
             str.trim()
-          )}&cache=0`;
-        }
+          )}`
+        );
+      }
+      ttslist.push(
+        `https://fanyi.baidu.com/gettts?lan=${encodeURIComponent(
+          lan
+        )}&text=${encodeURIComponent(str.trim())}&spd=3&source=web`
+      );
+      let audio = this.autio;
+      audio.rel = "noreferrer";
+      for (let i = 0; i < ttslist.length; i++) {
+        let r = await new Promise((resove) => {
+          audio.onerror = function () {
+            resove(0);
+          };
+          audio.onended = function () {
+            return resove(1);
+          };
+          audio.src = ttslist[i];
 
-        let audio = this.autio;
-        let t = 0;
-        let tretry = function (error) {
-          console.error("error");
-          console.error(error);
-          if (t < 10) {
-            audio.src = base;
-            audio.play();
-          }
-          t++;
-        };
-
-        audio.onerror = tretry;
-
-        audio.src = base;
-        audio.volume = 1;
-
-        audio.addEventListener("ended", function () {
-          _this.speaking = false;
-
-          return resolve();
-        });
-        setTimeout(() => {
           audio.play();
-        }, 10);
-      });
+        });
+        if (r > 0) break;
+      }
+      _this.speaking = false;
     },
 
-    getWrongSetence(lan) {
-      let lanlist = {
-        en: ["no no no", "oh sorry.", "incorrect", "come on."],
-      };
-      let list = lanlist[lan];
-      let i = parseInt(Math.random() * list.length);
-      return list[i];
-    },
-    getRightSetence(lan) {
-      let lanlist = {
-        en: ["yes yes yes", "well done", "good job"],
-      };
-      let list = lanlist[lan];
-
+    getWrongSetence() {
+      let list = this.config.tips[this.lan];
       let i = parseInt(Math.random() * list.length);
       return list[i];
     },
@@ -917,5 +906,14 @@ li.ready:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+.star {
+  color: gray;
+  opacity: 0.5;
+  font-size: 70%;
+}
+.star.enable {
+  color: red;
+  opacity: 1;
 }
 </style>

@@ -134,6 +134,8 @@ export default {
 
       items: storejs.get("dicts") || [],
       config: {
+        imgBase: "",
+        ttsBase: "",
         passNum: 40,
         gameTime1: 3,
         gameTime2: 6,
@@ -144,6 +146,7 @@ export default {
           yue: ["继续努力", "加油！"],
         },
         ttslan: { en: "en", zh: "zh", yue: "cte" },
+        url: "https://smlog.github.io/data/dict.js",
         games: [
           {
             _blank: 1,

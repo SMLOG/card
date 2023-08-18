@@ -6,8 +6,11 @@ const mixin = {
     };
   },
   methods: {
-    saveConfig() {
-      this.$store.commit('config', {})
+    saveConfig(config) {
+      this.$store.commit('config', config)
+    },
+    saveItems(items) {
+      this.$store.commit('items', items)
     }
   },
   computed: {
@@ -15,6 +18,9 @@ const mixin = {
     config() {
       return this.$store.state.config;
     },
+    items() {
+      return this.$store.state.items;
+    }
   }
 
 };
