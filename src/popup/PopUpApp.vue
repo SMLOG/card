@@ -12,75 +12,117 @@
         justify-content: space-between;
       "
     >
+      <div @click="printLog()">Print</div>
+      <div @click="showcandidate = !showcandidate">Candidate</div>
+
       <div @click="transAll()">Translate all</div>
       <div @click="save()">Save</div>
       <div style="margin: 5px">
         <input v-model="en" @focus="en = ''" @keyup.enter="addItem(en)" />
       </div>
     </div>
-
-    <ul style="padding-top: 30px">
-      <li
-        style="display: flex; margin-bottom: 10px"
-        v-for="(item, i) in pageList()"
-        :key="item.en"
-        :class="{ selected: curItem && item.en == curItem.en }"
+    <div
+      style="
+        position: fixed;
+        top: 30px;
+        bottom: 30px;
+        overflow: auto;
+        right: 0;
+        left: 0;
+      "
+    >
+      <div
+        style="
+          position: absolute;
+          background: white;
+          inset: 0px;
+          overflow: auto;
+        "
+        :style="{ zIndex: showcandidate ? 1 : 0 }"
       >
-        <div style="display: flex">
-          <div>{{ items.length - (page * pageSize + i) }}、</div>
-          <div>
-            <img
-              referrerpolicy="no-referrer"
-              :src="item.img"
-              style="width: 60px; height: 60px"
-              @click="selectItem(item)"
-              :style="{
-                border:
-                  curItem && item.en == curItem.en ? '2px solid red' : 'none',
-              }"
-            />
-          </div>
-          <div style="margin-left: 10px">
-            <div style="display: table">
-              <div style="display: table-row">
-                <div style="display: table-cell">
-                  <a
-                    @click="
-                      curItem = item;
-                      search(item['en']);
-                    "
-                    >en</a
+        <ul>
+          <li
+            v-for="(word, i) in candiates"
+            :key="word"
+            :style="{ color: enMap[word.toLowerCase()] ? 'red' : '' }"
+          >
+            {{ i }}、<a
+              style="cursor: pointer"
+              @click="
+                (en = word),
+                  !enMap[word.toLowerCase()] && addItem(word),
+                  (showcandidate = 0),
+                  search(word),
+                  (curItem = items.filter((e) => e.en == word)[0])
+              "
+              >{{ word }}</a
+            >
+          </li>
+        </ul>
+      </div>
+      <div
+        :style="{ zIndex: showcandidate ? 0 : 1 }"
+        style="
+          position: absolute;
+          background: white;
+          inset: 0px;
+          overflow: auto;
+        "
+      >
+        <ul>
+          <li
+            style="display: flex; margin-bottom: 10px"
+            v-for="(item, i) in pageList()"
+            :key="item.en"
+            :class="{ selected: curItem && item.en == curItem.en }"
+          >
+            <div style="display: flex">
+              <div>{{ items.length - (page * pageSize + i) }}、</div>
+              <div>
+                <img
+                  referrerpolicy="no-referrer"
+                  :src="item.img"
+                  style="width: 60px; height: 60px"
+                  @click="selectItem(item)"
+                  :style="{
+                    border:
+                      curItem && item.en == curItem.en
+                        ? '2px solid red'
+                        : 'none',
+                  }"
+                />
+              </div>
+              <div style="margin-left: 10px">
+                <div style="display: table">
+                  <div
+                    v-for="lan in config.langs"
+                    :key="lan"
+                    style="display: table-row"
                   >
+                    <div
+                      style="display: table-cell"
+                      @click="
+                        curItem = item;
+                        search(item[lan]);
+                      "
+                    >
+                      {{ lan }}:
+                    </div>
+                    <input v-model="item[lan]" style="display: table-cell" />
+                  </div>
                 </div>
-
-                <input style="display: table-cell" v-model="item['en']" />
               </div>
               <div
-                v-for="lan in config.langs"
-                :key="lan"
-                style="display: table-row"
+                style="margin-left: 20px; display: flex; flex-direction: column"
               >
-                <div
-                  style="display: table-cell"
-                  @click="
-                    curItem = item;
-                    search(item[lan]);
-                  "
-                >
-                  {{ lan }}:
-                </div>
-                <input v-model="item[lan]" style="display: table-cell" />
+                <a @click.stop="del(item)" style="cursor: pointer">Delete</a>
+                <a @click.stop="trans(item)" style="cursor: pointer">trans</a>
               </div>
             </div>
-          </div>
-          <div style="margin-left: 20px; display: flex; flex-direction: column">
-            <a @click.stop="del(item)" style="cursor: pointer">Delete</a>
-            <a @click.stop="trans(item)" style="cursor: pointer">trans</a>
-          </div>
-        </div>
-      </li>
-    </ul>
-
+          </li>
+        </ul>
+      </div>
+    </div>
     <div
       style="
         position: fixed;
@@ -92,7 +134,12 @@
       "
     >
       <a
-        style="cursor: pointer; color: blue; font-weight: bold"
+        style="
+          cursor: pointer;
+          color: blue;
+          font-weight: bold;
+          margin: 5px 10px;
+        "
         class="ctrl"
         @click="page = page - 1"
         v-if="page >= 1"
@@ -100,24 +147,29 @@
         Prev
       </a>
       <a
-        style="cursor: pointer; color: blue; font-weight: bold"
+        style="
+          cursor: pointer;
+          color: blue;
+          font-weight: bold;
+          margin: 5px 10px;
+        "
         class="ctrl"
         @click="page = page + 1"
         v-if="page <= parseInt((items.length + 1) / pageSize)"
       >
-        Next({{ page }})
+        Next({{ page }}/{{ parseInt((items.length + 1) / pageSize) }})
       </a>
       Total:{{ items.length }}
 
-      <a @click="upload()">Upload</a>
-      <a @click="download()">Download</a>
-      <span>Page Size:</span
+      <a @click="upload()" style="margin: 5px 10px">Upload</a>
+      <a @click="download()" style="margin: 5px 10px">Download</a>
+      <span style="margin: 5px 10px">Page Size:</span
       ><input
         v-model="pageSize"
         min="10"
         max="1000"
         type="number"
-        style="width: 40px"
+        style="width: 40px; margin: 5px 10px"
       />
     </div>
   </div>
@@ -125,108 +177,19 @@
 
 <script>
 import storejs from "storejs";
+import words from "./words";
+import config from "./config";
 import { service } from "@/service";
 import pako from "pako";
 export default {
   data() {
     return {
+      enMap: {},
+      showcandidate: 0,
       curItem: null,
-
+      candiates: words.split(/\n+/),
       items: storejs.get("dicts") || [],
-      config: {
-        imgBase: "",
-        ttsBase: "",
-        passNum: 40,
-        gameTime1: 3,
-        gameTime2: 6,
-        langs: ["en", "zh", "yue"],
-        tips: {
-          en: ["no no no", "oh sorry.", "incorrect", "come on."],
-          zh: ["继续努力", "加油！"],
-          yue: ["继续努力", "加油！"],
-        },
-        ttslan: { en: "en", zh: "zh", yue: "cte" },
-        url: "https://smlog.github.io/data/dict.js",
-        games: [
-          {
-            _blank: 1,
-            name: "pbskids.org games",
-            imgUrl:
-              "https://cms-tc.pbskids.org/global/mezzanines/_shellTopicBlock/Sesame_Puppy-Pet-Care_PBSGameFeature_908x510.jpg",
-            url: "https://pbskids.org/games",
-          },
-          {
-            name: "圈小猫",
-            imgUrl: "images/logo.jpg",
-            path: "cat",
-          },
-          {
-            name: "匹配游戏",
-            path: "card",
-          },
-          {
-            name: "方块消除",
-            imgUrl: "bitmap/logo.png",
-            path: "remove",
-          },
-          {
-            name: "数字推盘",
-            path: "szhrdGame",
-          },
-          {
-            name: "Bubble",
-          },
-          {
-            name: "五子棋",
-            path: "wuziqi",
-          },
-          {
-            name: "五子棋2",
-            path: "wuziqi2",
-          },
-          {
-            name: "unlock",
-          },
-          {
-            name: "connection",
-          },
-          {
-            name: "master_checkers_v3",
-          },
-          {
-            name: "numpuz",
-          },
-          {
-            name: "pintu",
-            imgUrl: "assets/img_480/game_logo.png",
-          },
-          {
-            name: "blue casino",
-            path: "blue2",
-          },
-          {
-            name: "lollipop",
-          },
-          {
-            path: "smarty-bubbles-2",
-            name: "smarty bubbles",
-            imgUrl: "SmartyBubbles2Teaser.jpg",
-          },
-          {
-            name: "ppiano",
-            imgUrl: "PerfectPiano_Teaser.jpg",
-          },
-          {
-            name: "pianoonline",
-          },
-          {
-            path: "pvz",
-            name: "Plant zombie",
-            imgUrl: "images/interface/Logo.jpg",
-            src: "http://crge.cn/games",
-          },
-        ],
-      },
+      config: config,
       page: 0,
       pages: 1,
       pageSize: 10,
@@ -234,6 +197,13 @@ export default {
     };
   },
   mounted() {
+    Object.assign(
+      this.enMap,
+      this.items.reduce((map, it) => {
+        map[it.en.toLowerCase()] = 1;
+        return map;
+      }, {})
+    );
     let self = this;
     chrome.runtime.onMessage.addListener(function (
       message,
@@ -255,6 +225,22 @@ export default {
     });
   },
   methods: {
+    printLog() {
+      let links = [];
+      for (let item of this.items) {
+        for (let ll of this.config.langs) {
+          let lan = this.config.ttslan[ll];
+          let str = item[ll];
+          links.push(
+            `"${ll}/${str.trim()}.mp3" ` +
+              `https://fanyi.baidu.com/gettts?lan=${encodeURIComponent(
+                lan
+              )}&text=${encodeURIComponent(str.trim())}&spd=3&source=web`
+          );
+        }
+      }
+      console.log(links.join("\n"));
+    },
     upload() {
       console.log(this.config);
       if (confirm("upload Y?"))
@@ -318,6 +304,8 @@ export default {
       let item = { en: en, img: "" };
       this.trans(item);
       this.items.push(item);
+      this.page = 0;
+      this.enMap[en.toLowerCase()] = 1;
     },
     selectItem(item) {
       this.curItem = item;
@@ -388,6 +376,8 @@ export default {
             i--;
           }
         }
+        this.enMap[item.en.toLowerCase()] = 0;
+
         console.log(this.items);
         this.save();
       }

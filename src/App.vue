@@ -547,6 +547,14 @@ export default {
 
       let _this = this;
       let ttslist = [];
+
+      if (this.lan == "en" && this.config.sound == "YD") {
+        ttslist.push(
+          `https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(
+            str.trim()
+          )}`
+        );
+      }
       if (this.config.ttsBase != undefined) {
         ttslist.push(
           this.config.ttsBase +
@@ -556,13 +564,7 @@ export default {
             ".mp3"
         );
       }
-      if (this.lan == "en" && this.config.sound == "YD") {
-        ttslist.push(
-          `https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(
-            str.trim()
-          )}`
-        );
-      }
+
       ttslist.push(
         `https://fanyi.baidu.com/gettts?lan=${encodeURIComponent(
           lan
