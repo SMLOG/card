@@ -569,7 +569,7 @@ export default {
           this.config.ttsBase +
             this.lan +
             "/" +
-            encodeURIComponent(str.trim()) +
+            encodeURIComponent(str.trim().replace(/[?.!]/i, "_")) +
             ".mp3"
         );
       }
