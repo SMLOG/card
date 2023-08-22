@@ -1,6 +1,6 @@
 const config = {
     imgBase: "",
-    ttsBase: "",
+    ttsBase: "audio/",
     passNum: 40,
     gameTime1: 3,
     gameTime2: 6,

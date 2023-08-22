@@ -437,7 +437,16 @@ export default {
       this.clockTimer = setInterval(() => {
         this.clockt = this.clockt - 1000;
         if (this.clockt <= 0) {
+          if (window.abcWindow) {
+            try {
+              window.abcWindow.close();
+            } catch (err) {
+              console.log(err);
+            }
+            window.abcWindow = 0;
+          }
           this.showGameIf = false;
+          this.rightCn = this.wrongCn = 0;
           clearInterval(this.clockTimer);
           this.randList();
         }

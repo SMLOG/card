@@ -38,6 +38,7 @@
     "vue-hls-player": "^1.0.6",
     "vue-router": "^3.2.0",
     "vuex": "^3.4.0",
+    "wordlist-english": "^1.2.1",
     "x2js": "^3.4.3"
   },
   "devDependencies": {

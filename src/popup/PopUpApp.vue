@@ -12,7 +12,6 @@
         justify-content: space-between;
       "
     >
-      <div @click="printLog()">Print</div>
       <div @click="showcandidate = !showcandidate">Candidate</div>
 
       <div @click="transAll()">Translate all</div>
@@ -110,6 +109,13 @@
                     </div>
                     <input v-model="item[lan]" style="display: table-cell" />
                   </div>
+                  <div style="display: table-row">
+                    <div style="display: table-cell">
+                      <a @click="googleopen(item)">IMG:</a>
+                      <a @click="closegoogle(item)">IMG:</a>
+                    </div>
+                    <input v-model="item.img" style="display: table-cell" />
+                  </div>
                 </div>
               </div>
               <div
@@ -181,6 +187,7 @@ import words from "./words";
 import config from "./config";
 import { service } from "@/service";
 import pako from "pako";
+//import wordlist from "./wordlist.json";
 export default {
   data() {
     return {
@@ -225,6 +232,14 @@ export default {
     });
   },
   methods: {
+    googleopen(item) {
+      window.open(
+        `https://www.google.com/search?q=${encodeURIComponent(
+          item.en
+        )}&tbm=isch`,
+        "googleimage"
+      );
+    },
     printLog() {
       let links = [];
       for (let item of this.items) {

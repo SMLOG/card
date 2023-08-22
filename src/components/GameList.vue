@@ -61,7 +61,12 @@ export default {
     },
     select(k, item) {
       this.item = item;
-      if (item._blank) window.open(this.getLink(item));
+      if (item._blank) {
+        window.abcWindow = window.open("about:_blank", "abc");
+        setTimeout(() => {
+          window.abcWindow.location.href = this.getLink(item);
+        }, 500);
+      }
       this.$emit("select");
     },
   },
