@@ -353,7 +353,22 @@ let serviceMap = {
     translators.map((e) =>
       e(request.content).then((ret) => {
         rets.push(ret);
+        if (ret && ret._raw && request.config && request.config.tranUrl) {
 
+          (async () => {
+            await fetch(request.config.tranUrl, {
+              method: "POST",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ item: request.content, resp: ret }),
+            });
+            // const content = await rawResponse.json();
+
+            //console.log(content);
+          })();
+        }
         sendResponse(rets);
       })
     );

@@ -12,9 +12,16 @@
         justify-content: space-between;
       "
     >
-      <div @click="showcandidate = !showcandidate">Candidate</div>
+      <div>
+        <a @click="showwordlist = !showwordlist">List:</a
+        ><select v-model="currentWordType" @click="showwordlist = 1">
+          <option v-for="type in wordlistTypes" :key="type" :value="type">
+            {{ type }}
+          </option>
+        </select>
+      </div>
 
-      <div @click="transAll()">Translate all</div>
+      <div @click="transAll()">Translate</div>
       <div @click="save()">Save</div>
       <div style="margin: 5px">
         <input v-model="en" @focus="en = ''" @keyup.enter="addItem(en)" />
@@ -37,12 +44,12 @@
           inset: 0px;
           overflow: auto;
         "
-        :style="{ zIndex: showcandidate ? 1 : 0 }"
+        :style="{ zIndex: showwordlist ? 1 : 0 }"
       >
         <ul>
           <li
             v-for="(word, i) in candiates"
-            :key="word"
+            :key="i"
             :style="{ color: enMap[word.toLowerCase()] ? 'red' : '' }"
           >
             {{ i }}、<a
@@ -50,7 +57,7 @@
               @click="
                 (en = word),
                   !enMap[word.toLowerCase()] && addItem(word),
-                  (showcandidate = 0),
+                  (showwordlist = 0),
                   search(word),
                   (curItem = items.filter((e) => e.en == word)[0])
               "
@@ -60,7 +67,7 @@
         </ul>
       </div>
       <div
-        :style="{ zIndex: showcandidate ? 0 : 1 }"
+        :style="{ zIndex: showwordlist ? 0 : 1 }"
         style="
           position: absolute;
           background: white;
@@ -187,14 +194,17 @@ import words from "./words";
 import config from "./config";
 import { service } from "@/service";
 import pako from "pako";
-//import wordlist from "./wordlist.json";
+import wordlist from "./wordlist.json";
+wordlist["custom"] = words.split(/\n+/);
+
 export default {
   data() {
     return {
       enMap: {},
-      showcandidate: 0,
+      showwordlist: 0,
       curItem: null,
-      candiates: words.split(/\n+/),
+      wordlistTypes: Object.keys(wordlist).sort(),
+      currentWordType: "custom",
       items: storejs.get("dicts") || [],
       config: config,
       page: 0,
@@ -230,6 +240,12 @@ export default {
         }
       }
     });
+  },
+  computed: {
+    candiates() {
+      console.log(this.currentWordType);
+      return wordlist[this.currentWordType] || [];
+    },
   },
   methods: {
     googleopen(item) {
@@ -340,12 +356,42 @@ export default {
         );
     },
     async transAll() {
-      for (let i = 0, items = this.pageList(); i < items.length; i++) {
-        await this.trans(items[i]);
+      if (this.showwordlist)
+        for (let i = 0, items = this.pageList(); i < items.length; i++) {
+          await this.trans(items[i]);
+        }
+      this.$forceUpdate();
+    },
+    async rawTranList() {
+      let config = { tranUrl: "http://localhost:8084/tran" };
+
+      for (let i = 0; i < this.candiates.length; i++) {
+        console.log(i, this.candiates[i]);
+        await new Promise((resolve) => {
+          service(
+            null,
+            {
+              cmd: "translate",
+              content: {
+                q: this.candiates[i],
+                opts: { to: "zh" },
+                config: config,
+              },
+            },
+            function (response) {
+              console.log(response);
+              if (
+                response &&
+                response.filter((e) => e.src == "BD").length > 0
+              ) {
+                resolve(response.filter((e) => e.src == "BD")[0].to);
+              }
+            }
+          );
+        });
       }
     },
     async trans(item) {
-      let self = this;
       let langs = this.config.langs;
       if (item.en) {
         for (var i = 0; i < langs.length; i++) {
@@ -374,7 +420,6 @@ export default {
           });
           item[langs[i]] = r ? r : item[langs[i]];
         }
-        self.$forceUpdate();
       }
     },
     save() {

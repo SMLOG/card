@@ -98,13 +98,13 @@ let obj = {
     modules: false,
   },
   devServer: {
-    port: 8084,
+    port: 8085,
     proxy: {
-      "/t": {
-        target: "http://localhost:8081",
+      "/tran": {
+        target: "http://localhost:8084",
         changeOrigin: true,
         pathRewrite: {
-          "^/t": "/t",
+          "^/tran": "/tran",
         },
       },
     },

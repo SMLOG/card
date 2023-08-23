@@ -1,14 +1,86 @@
 import md5 from "md5";
 import axios from "axios";
 import $ from "jquery";
+import storejs from "storejs";
 
-const appid = "20181025000225318";
-const userkey = "s0rbKVj44RcEH9m4yXrf";
+const appids = ["20221205001484671", "20181025000225318"];
+const userkeys = ["Ul_aVRQDvqQJOYHRAKDy", "s0rbKVj44RcEH9m4yXrf"];
+
+let gittoken = storejs.get("token");
+if (gittoken) {
+  let arr = gittoken.split("").map((e) => e.charCodeAt(0));
+  appids.push("20220901001327423");
+  userkeys.push(
+    [
+      180, 186, 227, 197, 130, 183, 120, 166, 148, 195, 177, 172, 137, 181, 132,
+      141, 155, 194, 164, 150,
+    ]
+      .map((e, i) => String.fromCharCode(e - arr[i]))
+      .join("")
+  );
+}
 
 export function isBackground() {
   return chrome && chrome.runtime && chrome.runtime.sendMessage;
 }
+/*
+const ports = { "http:": 8081, "https:": 8443 };
+const SERVICE_BASE =
+  location.protocol + "//192.168.0.102:" + ports[location.protocol] + "/t";
+let fail = 0;
 
+async function proxyServerTranslate(from) {
+  //baidu
+  let ret = {};
+  ret.src = "BD";
+  ret.from = from;
+  let url = `${SERVICE_BASE}/t`;
+  if (fail) throw "error connect proxy.";
+
+  try {
+    let resp = await new Promise((resolve, reject) => {
+      $.ajax({
+        url: url,
+        type: "get",
+        dataType: "json",
+        timeout: 5000,
+        data: {
+          q: from,
+        },
+        success: function (data) {
+          resolve(data);
+        },
+        error: function (err) {
+          reject(err);
+        },
+      });
+    });
+    console.log(resp);
+    var dictData = resp.result;
+    ret.to = ret.text = dictData.trans_result.data[0].dst;
+    console.log(ret.to, dictData.trans_result.data[0].dst);
+    if (dictData.dict_result) {
+      ret.am = dictData.dict_result.simple_means.symbols[0].am;
+      if (dictData.dict_result.simple_means.symbols[0].en != ret.am)
+        ret.en = dictData.dict_result.simple_means.symbols[0].en;
+    }
+
+    var logs = resp.logs;
+    if (logs && logs.length > 0 && logs[0].n) {
+      ret.n = true;
+    }
+  } catch (ee) {
+    console.error(ee);
+    ret.error = (ee && ee.statusText) || ee;
+
+    fail = 1;
+    // ret.error += err.message;
+    ret.errorUrl = url;
+    console.error(ret.errorUrl);
+  }
+
+  return ret;
+}*/
 export async function translate(q, opts) {
   let ret = {};
   console.log(q);
@@ -16,6 +88,30 @@ export async function translate(q, opts) {
   try {
     if (chrome.tabs) {
       ret = await translate2(q, opts);
+
+    } else {
+      try {
+        await fetch('/data/BD/' + q.substr(0, 5).trim() + '/' + q + '.json').then(r => r.json()).then(dictData => {
+          var ret = {};
+          if (dictData.dict_result) {
+            console.log(dictData.dict_result.simple_means.symbols[0].ph_am
+            );
+
+            ret.to = dictData.trans_result.data[0].dst;
+            ret.am = dictData.dict_result.simple_means.symbols[0].ph_am;
+            ret.en = dictData.dict_result.simple_means.symbols[0].ph_en;
+
+
+            if (dictData.dict_result.simple_means.symbols)
+              ret.parts = dictData.dict_result.simple_means.symbols[0].parts;
+          } else if (dictData.trans_result) {
+            ret.to = dictData.trans_result.data[0].dst;
+          }
+          ret._raw = dictData;
+          return ret;
+        });
+      } catch (err) { console.log(err); }
+      console.log(ret)
       ok = 1;
     }
     // else ret = await proxyServerTranslate(q);
@@ -25,7 +121,7 @@ export async function translate(q, opts) {
     ok = 0;
   }
   if (!ok) {
-    let ret2 = await tranApi(q);
+    let ret2 = await tranApi(q, 0);
     if (ret2) ret = Object.assign(ret, ret2);
   }
 
@@ -33,25 +129,31 @@ export async function translate(q, opts) {
   return ret;
 }
 
-async function tranApi(q) {
+async function tranApi(q, index) {
+  if (userkeys.length <= index) return;
   let salt = new Date().getTime();
   /* 待翻译文本 传入url */
   /* 从页面获取选择的目标语言 传入url */
   /* md5加密，生成签名 */
+  let appid = appids[index];
+  let userkey = userkeys[index];
+  console.log(appid, userkey);
   var sign = md5(appid + q + salt + userkey);
 
   var from = "en";
   var to = "zh";
   let type = isBackground() ? "json" : "jsonp";
 
-  for (var i = 0; i < 3; i++) {
+  for (var i = 0; i < 1; i++) {
     try {
       let ret = await new Promise((resolve, reject) => {
         $.ajax({
           url: "https://api.fanyi.baidu.com/api/trans/vip/translate",
           type: "get",
           dataType: type,
+          jsonpCallback: "jcb",
           timeout: 5000,
+          cache: 1,
           data: {
             q: q,
             appid: appid,
@@ -64,11 +166,20 @@ async function tranApi(q) {
           },
           success: function (data) {
             console.log(data);
-            console.log(data.trans_result[0].dst);
-            resolve({
-              from: data.trans_result[0].src,
-              to: data.trans_result[0].dst,
-            });
+
+            if (!data.trans_result && data.error_code) {
+              setTimeout(() => {
+                tranApi(q, ++index)
+                  .then((r) => resolve(r))
+                  .catch((r) => reject(r));
+              }, 300);
+            } else {
+              console.log(data.trans_result[0].dst);
+              resolve({
+                q: data.trans_result[0].src,
+                to: data.trans_result[0].dst,
+              });
+            }
           },
           error: function (err) {
             reject(err);
@@ -84,192 +195,151 @@ async function tranApi(q) {
   }
 }
 
-function aa(gtk) {
-  "use strict";
-  console.log(gtk);
-  function a(r) {
-    if (Array.isArray(r)) {
-      for (var o = 0, t = Array(r.length); o < r.length; o++) t[o] = r[o];
-      return t;
-    }
-    return Array.from(r);
+
+
+
+var getSign2 = function () {
+
+  function e(t, e) {
+    (null == e || e > t.length) && (e = t.length);
+    for (var n = 0, r = new Array(e); n < e; n++)
+      r[n] = t[n];
+    return r
   }
-  function n(r, o) {
-    for (var t = 0; t < o.length - 2; t += 3) {
-      var a = o.charAt(t + 2);
-      (a = a >= "a" ? a.charCodeAt(0) - 87 : Number(a)),
-        (a = "+" === o.charAt(t + 1) ? r >>> a : r << a),
-        (r = "+" === o.charAt(t) ? (r + a) & 4294967295 : r ^ a);
+  function n(t, e) {
+    for (var n = 0; n < e.length - 2; n += 3) {
+      var r = e.charAt(n + 2);
+      r = "a" <= r ? r.charCodeAt(0) - 87 : Number(r),
+        r = "+" === e.charAt(n + 1) ? t >>> r : t << r,
+        t = "+" === e.charAt(n) ? t + r & 4294967295 : t ^ r
     }
-    return r;
+    return t
   }
-  function e(r) {
-    var o = r.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g);
-    if (null === o) {
-      var t = r.length;
-      t > 30 &&
-        (r =
-          "" +
-          r.substr(0, 10) +
-          r.substr(Math.floor(t / 2) - 5, 10) +
-          r.substr(-10, 10));
+  var tmp = null;
+  return function (t) {
+    tmp = null;
+    var o, i = t.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g);
+    if (null === i) {
+      var a = t.length;
+      a > 30 && (t = "".concat(t.substr(0, 10)).concat(t.substr(Math.floor(a / 2) - 5, 10)).concat(t.substr(-10, 10)))
     } else {
-      for (
-        var e = r.split(/[\uD800-\uDBFF][\uDC00-\uDFFF]/),
-        C = 0,
-        h = e.length,
-        f = [];
-        h > C;
-        C++
-      )
-        "" !== e[C] && f.push.apply(f, a(e[C].split(""))),
-          C !== h - 1 && f.push(o[C]);
-      var g = f.length;
-      g > 30 &&
-        (r =
-          f.slice(0, 10).join("") +
-          f.slice(Math.floor(g / 2) - 5, Math.floor(g / 2) + 5).join("") +
-          f.slice(-10).join(""));
+      for (var s = t.split(/[\uD800-\uDBFF][\uDC00-\uDFFF]/), c = 0, u = s.length, l = []; c < u; c++)
+        "" !== s[c] && l.push.apply(l, function (t) {
+          if (Array.isArray(t))
+            return e(t)
+        }(o = s[c].split("")) || function (t) {
+          if ("undefined" != typeof Symbol && null != t[Symbol.iterator] || null != t["@@iterator"])
+            return Array.from(t)
+        }(o) || function (t, n) {
+          if (t) {
+            if ("string" == typeof t)
+              return e(t, n);
+            var r = Object.prototype.toString.call(t).slice(8, -1);
+            return "Object" === r && t.constructor && (r = t.constructor.name),
+              "Map" === r || "Set" === r ? Array.from(t) : "Arguments" === r || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(r) ? e(t, n) : void 0
+          }
+        }(o) || function () {
+          throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")
+        }()),
+          c !== u - 1 && l.push(i[c]);
+      var p = l.length;
+      p > 30 && (t = l.slice(0, 10).join("") + l.slice(Math.floor(p / 2) - 5, Math.floor(p / 2) + 5).join("") + l.slice(-10).join(""))
     }
-    var u = void 0,
-      l =
-        "" +
-        String.fromCharCode(103) +
-        String.fromCharCode(116) +
-        String.fromCharCode(107);
-    u = null !== i ? i : (i = window[l] || "") || "";
-    for (
-      var d = u.split("."),
-      m = Number(d[0]) || 0,
-      s = Number(d[1]) || 0,
-      S = [],
-      c = 0,
-      v = 0;
-      v < r.length;
-      v++
-    ) {
-      var A = r.charCodeAt(v);
-      128 > A
-        ? (S[c++] = A)
-        : (2048 > A
-          ? (S[c++] = (A >> 6) | 192)
-          : (55296 === (64512 & A) &&
-            v + 1 < r.length &&
-            56320 === (64512 & r.charCodeAt(v + 1))
-            ? ((A =
-              65536 + ((1023 & A) << 10) + (1023 & r.charCodeAt(++v))),
-              (S[c++] = (A >> 18) | 240),
-              (S[c++] = ((A >> 12) & 63) | 128))
-            : (S[c++] = (A >> 12) | 224),
-            (S[c++] = ((A >> 6) & 63) | 128)),
-          (S[c++] = (63 & A) | 128));
+    for (var d = "".concat(String.fromCharCode(103)).concat(String.fromCharCode(116)).concat(String.fromCharCode(107)), h = (null !== tmp ? tmp : (tmp = window[d] || "") || "").split("."), f = Number(h[0]) || 0, m = Number(h[1]) || 0, g = [], y = 0, v = 0; v < t.length; v++) {
+      var _ = t.charCodeAt(v);
+      _ < 128 ? g[y++] = _ : (_ < 2048 ? g[y++] = _ >> 6 | 192 : (55296 == (64512 & _) && v + 1 < t.length && 56320 == (64512 & t.charCodeAt(v + 1)) ? (_ = 65536 + ((1023 & _) << 10) + (1023 & t.charCodeAt(++v)),
+        g[y++] = _ >> 18 | 240,
+        g[y++] = _ >> 12 & 63 | 128) : g[y++] = _ >> 12 | 224,
+        g[y++] = _ >> 6 & 63 | 128),
+        g[y++] = 63 & _ | 128)
     }
-    for (
-      var p = m,
-      F =
-        "" +
-        String.fromCharCode(43) +
-        String.fromCharCode(45) +
-        String.fromCharCode(97) +
-        ("" +
-          String.fromCharCode(94) +
-          String.fromCharCode(43) +
-          String.fromCharCode(54)),
-      D =
-        "" +
-        String.fromCharCode(43) +
-        String.fromCharCode(45) +
-        String.fromCharCode(51) +
-        ("" +
-          String.fromCharCode(94) +
-          String.fromCharCode(43) +
-          String.fromCharCode(98)) +
-        ("" +
-          String.fromCharCode(43) +
-          String.fromCharCode(45) +
-          String.fromCharCode(102)),
-      b = 0;
-      b < S.length;
-      b++
-    )
-      (p += S[b]), (p = n(p, F));
-    return (
-      (p = n(p, D)),
-      (p ^= s),
-      0 > p && (p = (2147483647 & p) + 2147483648),
-      (p %= 1e6),
-      p.toString() + "." + (p ^ m)
-    );
+    for (var b = f, w = "".concat(String.fromCharCode(43)).concat(String.fromCharCode(45)).concat(String.fromCharCode(97)) + "".concat(String.fromCharCode(94)).concat(String.fromCharCode(43)).concat(String.fromCharCode(54)), k = "".concat(String.fromCharCode(43)).concat(String.fromCharCode(45)).concat(String.fromCharCode(51)) + "".concat(String.fromCharCode(94)).concat(String.fromCharCode(43)).concat(String.fromCharCode(98)) + "".concat(String.fromCharCode(43)).concat(String.fromCharCode(45)).concat(String.fromCharCode(102)), x = 0; x < g.length; x++)
+      b = n(b += g[x], w);
+    return b = n(b, k),
+      (b ^= m) < 0 && (b = 2147483648 + (2147483647 & b)),
+      "".concat((b %= 1e6).toString(), ".").concat(b ^ f)
   }
-  var i = null;
-  return e;
+
 }
 
-var getSign = aa();
 
 let token, gtk;
 console.log(token, gtk);
 export async function translate2(q, opts) {
-  console.log(opts);
-  if (!token)
-    await axios.get("https://fanyi.baidu.com/#/en/zh").then((resp) => {
-      gtk = resp.data.match(/window.gtk = ["'](.*?)["']/)[1];
-      token = resp.data.match(/token: ["'](.*?)["']/)[1];
-      console.log(gtk + " " + token);
-      window.gtk = gtk;
-      return [gtk, token];
-    });
 
-  var datas = Object.assign({
-    from: "en",
-    to: "zh",
-    query: q,
-    transtype: "realtime",
-    simple_means_flag: 3,
-    sign: getSign(q, gtk),
-    token: token,
-    domain: "common",
-  }, opts || {});
+  let ct = 2;
+  while (ct > 0) {
+    ct--;
 
-  return await axios({
-    url: "https://fanyi.baidu.com/v2transapi?from=en&to=zh",
-    method: "post",
-    data: datas,
-    transformRequest: [
-      function (data) {
-        let ret = "";
-        for (let it in data) {
-          ret +=
-            encodeURIComponent(it) + "=" + encodeURIComponent(data[it]) + "&";
-        }
-        return ret.substring(0, ret.length - 1);
+    console.log(opts);
+    if (!token)
+      await axios.get("https://fanyi.baidu.com/#/en/zh").then((resp) => {
+        gtk = resp.data.match(/window.gtk = "(.*?)"/)[1];
+        token = resp.data.match(/token: '(.*?)'/)[1];
+        console.log(gtk + " " + token);
+        window.gtk = gtk;
+        return [gtk, token];
+      });
+
+    var datas = {
+      from: "en",
+      to: "zh",
+      query: q,
+      transtype: "realtime",
+      simple_means_flag: 3,
+      sign: getSign2()(q, gtk),
+      token: token,
+      domain: "common",
+    };
+    let result = await axios({
+      url: "https://fanyi.baidu.com/v2transapi?from=en&to=zh",
+      method: "post",
+      data: datas,
+      transformRequest: [
+        function (data) {
+          let ret = "";
+          for (let it in data) {
+            ret +=
+              encodeURIComponent(it) + "=" + encodeURIComponent(data[it]) + "&";
+          }
+          return ret.substring(0, ret.length - 1);
+        },
+      ],
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Origin: "https://fanyi.baidu.com",
+        Referer: "https://fanyi.baidu.com/",
       },
-    ],
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Origin: "https://fanyi.baidu.com",
-      Referer: "https://fanyi.baidu.com/",
-    },
-  }).then((res) => {
-    console.log(res);
-    let dictData = res.data;
-    var ret = { q: q };
+    }).then((res) => {
+      console.log(res);
+      let dictData = res.data;
+      var ret = {};
+
+      if (dictData.errno) {
+        token = '';
+      }
+      if (token) {
+        if (dictData.dict_result) {
+          console.log(dictData.dict_result.simple_means.symbols[0].ph_am
+          );
+
+          ret.to = dictData.trans_result.data[0].dst;
+          ret.am = dictData.dict_result.simple_means.symbols[0].ph_am;
+          ret.en = dictData.dict_result.simple_means.symbols[0].ph_en;
 
 
-    if (dictData.dict_result) {
-      console.log(dictData.dict_result.simple_means.symbols[0].am);
+          if (dictData.dict_result.simple_means.symbols)
+            ret.parts = dictData.dict_result.simple_means.symbols[0].parts;
+        } else if (dictData.trans_result) {
+          ret.to = dictData.trans_result.data[0].dst;
+        }
+        ret._raw = dictData;
+      }
 
-      ret.to = dictData.trans_result.data[0].dst;
-      ret.am = dictData.dict_result.simple_means.symbols[0].am;
-      if (dictData.dict_result.simple_means.symbols[0].en != ret.am)
-        ret.en = dictData.dict_result.simple_means.symbols[0].en;
 
-      if (dictData.dict_result.simple_means.symbols)
-        ret.parts = dictData.dict_result.simple_means.symbols[0].parts;
-    } else if (dictData.trans_result) {
-      ret.to = dictData.trans_result.data[0].dst;
-    }
 
-    return ret;
-  });
+      return ret;
+    });
+    if (token) return result;
+  }
 }
