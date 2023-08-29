@@ -16,12 +16,14 @@
         <a @click="showwordlist = !showwordlist">List:</a
         ><select v-model="currentWordType" @click="showwordlist = 1">
           <option v-for="type in wordlistTypes" :key="type" :value="type">
-            {{ type }}
+            {{ type }}({{ wordlist()[type].length }})
           </option>
         </select>
       </div>
 
-      <div @click="transAll()">Translate</div>
+      <div @click="transAll()">
+        Translate({{ curIndex }}/{{ candiates.length }})
+      </div>
       <div @click="save()">Save</div>
       <div style="margin: 5px">
         <input v-model="en" @focus="en = ''" @keyup.enter="addItem(en)" />
@@ -52,17 +54,34 @@
             :key="i"
             :style="{ color: enMap[word.toLowerCase()] ? 'red' : '' }"
           >
-            {{ i }}、<a
-              style="cursor: pointer"
-              @click="
-                (en = word),
-                  !enMap[word.toLowerCase()] && addItem(word),
-                  (showwordlist = 0),
-                  search(word),
-                  (curItem = items.filter((e) => e.en == word)[0])
-              "
-              >{{ word }}</a
-            >
+            <div v-if="transMap[word.toLowerCase()]">
+              <span> {{ i }}、</span
+              ><a
+                style="cursor: pointer"
+                @click="
+                  (en = word),
+                    !enMap[word.toLowerCase()] && addItem(word),
+                    (showwordlist = 0),
+                    search(word),
+                    (curItem = items.filter((e) => e.en == word)[0])
+                "
+                :style="{
+                  color: transMap[word.toLowerCase()].to ? 'green' : '',
+                }"
+                >{{ word }}</a
+              >
+              <span>{{ transMap[word.toLowerCase()].to }}</span>
+              <span v-if="transMap[word.toLowerCase()].ph_am"
+                >[{{ transMap[word.toLowerCase()].ph_am }}]</span
+              >
+              <span
+                v-if="
+                  transMap[word.toLowerCase()].ph_am !=
+                  transMap[word.toLowerCase()].ph_en
+                "
+                >[{{ transMap[word.toLowerCase()].ph_en }}]</span
+              >
+            </div>
           </li>
         </ul>
       </div>
@@ -195,12 +214,17 @@ import config from "./config";
 import { service } from "@/service";
 import pako from "pako";
 import wordlist from "./wordlist.json";
-wordlist["custom"] = words.split(/\n+/);
+wordlist["custom"] = words
+  .split(/\n+/)
+  .filter((e) => e.trim())
+  .map((e) => e.trim());
 
 export default {
   data() {
     return {
+      curIndex: 0,
       enMap: {},
+      transMap: {},
       showwordlist: 0,
       curItem: null,
       wordlistTypes: Object.keys(wordlist).sort(),
@@ -240,6 +264,11 @@ export default {
         }
       }
     });
+
+    this.transMap = {};
+    for (let i of this.candiates) {
+      this.transMap[i.toLowerCase()] = { to: "", ph_am: "", ph_en: "" };
+    }
   },
   computed: {
     candiates() {
@@ -247,7 +276,18 @@ export default {
       return wordlist[this.currentWordType] || [];
     },
   },
+  watch: {
+    currentWordType() {
+      this.transMap = {};
+      for (let i of this.candiates) {
+        this.transMap[i.toLowerCase()] = { to: "", ph_am: "", ph_en: "" };
+      }
+    },
+  },
   methods: {
+    wordlist() {
+      return wordlist;
+    },
     googleopen(item) {
       window.open(
         `https://www.google.com/search?q=${encodeURIComponent(
@@ -318,7 +358,7 @@ export default {
     },
     pageList() {
       let list = this.searchItems().slice().reverse();
-      console.log(list);
+      // console.log(list);
       if (list.length > 0) {
         let begin = this.page * this.pageSize;
         let end = (1 + this.page) * this.pageSize;
@@ -356,26 +396,62 @@ export default {
         );
     },
     async transAll() {
-      if (this.showwordlist)
+      console.log(this.showwordlist);
+      if (!this.showwordlist) {
         for (let i = 0, items = this.pageList(); i < items.length; i++) {
           await this.trans(items[i]);
         }
+      } else {
+        console.log(2);
+
+        await this.rawTranList();
+      }
       this.$forceUpdate();
     },
     async rawTranList() {
+      console.log("rawTranList");
       let config = { tranUrl: "http://localhost:8084/tran" };
 
+      let self = this;
       for (let i = 0; i < this.candiates.length; i++) {
-        console.log(i, this.candiates[i]);
+        this.curIndex = i;
+        let word = this.candiates[i];
+        let resp = await fetch("/tran?q=" + encodeURIComponent(word)).then(
+          (r) => r.json()
+        );
+        if (resp.enc) {
+          resp = JSON.parse(pako.ungzip(atob(resp.enc), { to: "string" }));
+        }
+        if (resp && resp.trans_result && resp.trans_result.data[0].dst) {
+          Object.assign(this.transMap[word.toLowerCase()], {
+            to: resp.trans_result.data[0].dst,
+          });
+          if (
+            resp.dict_result &&
+            resp.dict_result.simple_means &&
+            resp.dict_result.simple_means.symbols &&
+            resp.dict_result.simple_means.symbols.length
+          ) {
+            Object.assign(this.transMap[word.toLowerCase()], {
+              ph_am: resp.dict_result.simple_means.symbols[0].ph_am,
+              ph_en: resp.dict_result.simple_means.symbols[0].ph_en,
+            });
+          }
+        }
+
+        // this.$forceUpdate();
+        if (resp.trans_result) continue;
+
+        console.log(i, word);
         await new Promise((resolve) => {
           service(
             null,
             {
               cmd: "translate",
+              config: config,
               content: {
-                q: this.candiates[i],
+                q: word,
                 opts: { to: "zh" },
-                config: config,
               },
             },
             function (response) {
@@ -384,10 +460,35 @@ export default {
                 response &&
                 response.filter((e) => e.src == "BD").length > 0
               ) {
+                let resp = response.filter((e) => e.src == "BD")[0]._raw;
+
+                if (resp.trans_result)
+                  Object.assign(self.transMap[word.toLowerCase()], {
+                    to: resp.trans_result.data[0].dst,
+                  });
+
+                if (
+                  resp.dict_result &&
+                  resp.dict_result.simple_means &&
+                  resp.dict_result.simple_means.symbols &&
+                  resp.dict_result.simple_means.symbols.length
+                ) {
+                  Object.assign(self.transMap[word.toLowerCase()], {
+                    ph_am: resp.dict_result.simple_means.symbols[0].ph_am,
+                    ph_en: resp.dict_result.simple_means.symbols[0].ph_en,
+                  });
+                }
+
                 resolve(response.filter((e) => e.src == "BD")[0].to);
+              } else {
+                setTimeout(resolve, 5000);
               }
             }
           );
+        });
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, 2000);
         });
       }
     },

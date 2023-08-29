@@ -84,46 +84,21 @@ async function proxyServerTranslate(from) {
 export async function translate(q, opts) {
   let ret = {};
   console.log(q);
-  let ok = 0;
   try {
     if (chrome.tabs) {
       ret = await translate2(q, opts);
 
     } else {
-      try {
-        await fetch('/data/BD/' + q.substr(0, 5).trim() + '/' + q + '.json').then(r => r.json()).then(dictData => {
-          var ret = {};
-          if (dictData.dict_result) {
-            console.log(dictData.dict_result.simple_means.symbols[0].ph_am
-            );
-
-            ret.to = dictData.trans_result.data[0].dst;
-            ret.am = dictData.dict_result.simple_means.symbols[0].ph_am;
-            ret.en = dictData.dict_result.simple_means.symbols[0].ph_en;
-
-
-            if (dictData.dict_result.simple_means.symbols)
-              ret.parts = dictData.dict_result.simple_means.symbols[0].parts;
-          } else if (dictData.trans_result) {
-            ret.to = dictData.trans_result.data[0].dst;
-          }
-          ret._raw = dictData;
-          return ret;
-        });
-      } catch (err) { console.log(err); }
-      console.log(ret)
-      ok = 1;
+      let ret2 = await tranApi(q, 0);
+      if (ret2) ret = Object.assign(ret, ret2);
     }
+
     // else ret = await proxyServerTranslate(q);
   } catch (ee) {
     console.error(ee);
     ret.error = ee;
-    ok = 0;
   }
-  if (!ok) {
-    let ret2 = await tranApi(q, 0);
-    if (ret2) ret = Object.assign(ret, ret2);
-  }
+
 
   ret.src = "BD";
   return ret;

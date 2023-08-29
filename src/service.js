@@ -30,7 +30,7 @@ let bgAudio = currentDoc.querySelector("audio#bg");
 Axios.defaults.timeout = 5000;
 
 const translators = [
-  async (content) => {
+  /*async (content) => {
     //yaoudao
 
     let type = isBackground() ? "json" : "jsonp";
@@ -68,7 +68,7 @@ const translators = [
         },
       });
     });
-  },
+  },*/
   async (content) => {
     return await translate(content.q, content.opts);
   },
@@ -102,6 +102,7 @@ const translators = [
           }, "");
         // storejs.set(r.message[0].key, { q: ret.q, to: ret.to });
       }
+      ret._raw = r;
     }
     console.log(ret);
     return ret;
@@ -356,19 +357,24 @@ let serviceMap = {
         if (ret && ret._raw && request.config && request.config.tranUrl) {
 
           (async () => {
+            delete ret._raw.logid;
+            let content = btoa(
+              pako.gzip(JSON.stringify(ret._raw), { to: "string", level: 9 })
+            )
             await fetch(request.config.tranUrl, {
               method: "POST",
               headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ item: request.content, resp: ret }),
+              body: JSON.stringify({ item: request.content, resp: ret, enc: JSON.stringify({ enc: content }) }),
             });
             // const content = await rawResponse.json();
 
             //console.log(content);
           })();
         }
+
         sendResponse(rets);
       })
     );
