@@ -6,12 +6,15 @@ import bus from "@/bus";
 //const audio = new Audio();
 import { translate, isBackground } from "./translator";
 import { getVideos } from "@/config";
-
+//require("lzma");
+const uint8base64 = require("byte-base64");
+const lzma = require("lzma/src/lzma_worker.js").LZMA_WORKER;
 const DataRep = "SMLOG";
 const pako = require("pako");
 //window.pako = pako;
 const RWORD = "words";
 const NWORD = "nwords";
+
 //import sounds from "@/../public/3s.mp3";
 //console.log(sounds);
 const jsonparse = JSON.parse;
@@ -358,16 +361,21 @@ let serviceMap = {
 
           (async () => {
             delete ret._raw.logid;
-            let content = btoa(
-              pako.gzip(JSON.stringify(ret._raw), { to: "string", level: 9 })
-            )
+
+            /* let content = btoa(
+               pako.gzip(JSON.stringify(ret._raw), { to: "string", level: 9 })
+             )*/
+
+            let content = lzma.compress(JSON.stringify(ret._raw), 9)
+            content = uint8base64.bytesToBase64(new Uint8Array(content));
+
             await fetch(request.config.tranUrl, {
               method: "POST",
               headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ item: request.content, resp: ret, enc: JSON.stringify({ enc: content }) }),
+              body: JSON.stringify({ item: request.content, resp: ret, enc: JSON.stringify({ anc: content }) }),
             });
             // const content = await rawResponse.json();
 

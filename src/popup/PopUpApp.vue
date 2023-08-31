@@ -21,8 +21,16 @@
         </select>
       </div>
 
-      <div @click="transAll()">
-        Translate({{ curIndex }}/{{ candiates.length }})
+      <div>
+        <a @click="transAll()">Trans</a>
+        (<input
+          v-model.number="curIndex"
+          min="0"
+          type="number"
+          :max="candiates.length - 1"
+          style="width: 40px"
+        />/<a @click="scrollTo()">{{ candiates.length }}</a
+        >)
       </div>
       <div @click="save()">Save</div>
       <div style="margin: 5px">
@@ -48,14 +56,14 @@
         "
         :style="{ zIndex: showwordlist ? 1 : 0 }"
       >
-        <ul>
+        <ul id="candy">
           <li
             v-for="(word, i) in candiates"
             :key="i"
             :style="{ color: enMap[word.toLowerCase()] ? 'red' : '' }"
           >
             <div v-if="transMap[word.toLowerCase()]">
-              <span> {{ i }}、</span
+              <span @click="curIndex = i"> {{ i }}、</span
               ><a
                 style="cursor: pointer"
                 @click="
@@ -214,6 +222,9 @@ import config from "./config";
 import { service } from "@/service";
 import pako from "pako";
 import wordlist from "./wordlist.json";
+//require("lzma");
+const uint8base64 = require("byte-base64");
+const lzma = require("lzma/src/lzma_worker.js").LZMA_WORKER;
 wordlist["custom"] = words
   .split(/\n+/)
   .filter((e) => e.trim())
@@ -235,6 +246,7 @@ export default {
       pages: 1,
       pageSize: 10,
       en: "",
+      downTran: 0,
     };
   },
   mounted() {
@@ -285,6 +297,9 @@ export default {
     },
   },
   methods: {
+    scrollTo() {
+      document.querySelectorAll("#candy li")[this.curIndex].scrollIntoView();
+    },
     wordlist() {
       return wordlist;
     },
@@ -398,13 +413,24 @@ export default {
     async transAll() {
       console.log(this.showwordlist);
       if (!this.showwordlist) {
+        if (this.downTran & 1) {
+          console.log("return");
+          return;
+        }
+        this.dongTran |= 1;
         for (let i = 0, items = this.pageList(); i < items.length; i++) {
           await this.trans(items[i]);
         }
+        this.dongTran &= ~1;
       } else {
         console.log(2);
-
+        if (this.downTran & (1 << 2)) {
+          console.log("return");
+          return;
+        }
+        this.downTran |= 1 << 2;
         await this.rawTranList();
+        this.downTran &= ~(1 << 2);
       }
       this.$forceUpdate();
     },
@@ -413,14 +439,22 @@ export default {
       let config = { tranUrl: "http://localhost:8084/tran" };
 
       let self = this;
-      for (let i = 0; i < this.candiates.length; i++) {
-        this.curIndex = i;
+      for (; this.curIndex < this.candiates.length; this.curIndex++) {
+        let i = this.curIndex;
         let word = this.candiates[i];
         let resp = await fetch("/tran?q=" + encodeURIComponent(word)).then(
           (r) => r.json()
         );
         if (resp.enc) {
           resp = JSON.parse(pako.ungzip(atob(resp.enc), { to: "string" }));
+        } else if (resp.anc) {
+          try {
+            resp = JSON.parse(
+              lzma.decompress(uint8base64.base64ToBytes(resp.anc))
+            );
+          } catch (ee) {
+            console.error(ee);
+          }
         }
         if (resp && resp.trans_result && resp.trans_result.data[0].dst) {
           Object.assign(this.transMap[word.toLowerCase()], {
@@ -478,17 +512,17 @@ export default {
                     ph_en: resp.dict_result.simple_means.symbols[0].ph_en,
                   });
                 }
-
-                resolve(response.filter((e) => e.src == "BD")[0].to);
-              } else {
-                setTimeout(resolve, 5000);
+                if (resp.trans_result || resp.dict_result) {
+                  resolve(response.filter((e) => e.src == "BD")[0].to);
+                }
               }
             }
           );
+          setTimeout(resolve, 30000);
         });
 
         await new Promise((resolve) => {
-          setTimeout(resolve, 2000);
+          setTimeout(resolve, 3000);
         });
       }
     },

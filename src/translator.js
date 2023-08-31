@@ -309,6 +309,7 @@ export async function translate2(q, opts) {
           ret.to = dictData.trans_result.data[0].dst;
         }
         ret._raw = dictData;
+        ret.q = q;
       }
 
 
