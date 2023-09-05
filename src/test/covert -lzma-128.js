@@ -3,7 +3,41 @@ const pako = require("pako");
 const os = require('os')
 const path = require('path')
 const lzma = require("lzma");
-const uint8base64 = require("byte-base64");
+
+
+let bytesToBase128 = (bytesArr) => {
+    // 128 characters to encode as json-string
+    let c = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz¼½ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+    let fbits = [];
+    let bits = (n, b = 8) => [...Array(b)].map((x, i) => n >> i & 1);
+    bytesArr.map(x => fbits.push(...bits(x)));
+
+    let fout = [];
+    for (let i = 0; i < fbits.length / 7; i++) {
+        fout.push(parseInt(fbits.slice(i * 7, i * 7 + 7).reverse().join(''), 2))
+    };
+
+    return (fout.map(x => c[x])).join('');
+}
+
+
+let base128ToBytes = (base128str) => {
+    // 128 characters to encode as json-string
+    let c = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz¼½ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+
+    dfout = base128str.split('').map(x => c.indexOf(x));
+    let dfbits = [];
+    let bits = (n, b = 8) => [...Array(b)].map((x, i) => n >> i & 1);
+    dfout.map(x => dfbits.push(...bits(x, 7)));
+
+    let dfbytes = [];
+    let m1 = dfbits.length % 8 ? 1 : 0;
+    for (let i = 0; i < dfbits.length / 8 - m1; i++) {
+        dfbytes.push(parseInt(dfbits.slice(i * 8, i * 8 + 8).reverse().join(''), 2))
+    };
+
+    return dfbytes;
+}
 
 
 async function getFiles(dir) {
@@ -27,15 +61,17 @@ async function getFiles(dir) {
 
             let raw = JSON.stringify(json);
             let output = lzma.compress(raw, 9)
-            output = uint8base64.bytesToBase64(new Uint8Array(output));
+            output = bytesToBase128(new Uint8Array(output));
 
             //    output = uint8base64.base64ToBytes(output);
             //   output = lzma.decompress(output);
+            console.log(output)
+            console.log(base128ToBytes(output));
 
 
 
 
-            let newpath = name.replace(/BDe/, 'BDa').replace('Dicte', 'Dicta');
+            let newpath = name.replace(/BDe/, 'BD8').replace('Dicte', 'Dict8');
             // console.log(raw)
 
             console.log(newpath, path.dirname(newpath));
@@ -46,7 +82,7 @@ async function getFiles(dir) {
             fs.mkdirSync(path.dirname(newpath), { recursive: true });
             fs.writeFileSync(newpath, wrapContent);
             // console.log(wrapContent);
-            //  process.exit(0)
+            process.exit(0)
         }
     }
 }
@@ -66,3 +102,4 @@ lzma.compress('hello', 9, function on_finish(result, error) {
 console.log(pako.gzip('hello', { to: "string", level: 9 }).length);
 
 */
+

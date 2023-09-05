@@ -29,6 +29,7 @@
           type="number"
           :max="candiates.length - 1"
           style="width: 40px"
+          @click="scrollTo()"
         />/<a @click="scrollTo()">{{ candiates.length }}</a
         >)
       </div>
@@ -518,11 +519,11 @@ export default {
               }
             }
           );
-          setTimeout(resolve, 30000);
+          setTimeout(resolve, 10000);
         });
 
         await new Promise((resolve) => {
-          setTimeout(resolve, 3000);
+          setTimeout(resolve, 2000);
         });
       }
     },
