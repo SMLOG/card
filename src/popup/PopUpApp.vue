@@ -218,14 +218,16 @@
 
 <script>
 import storejs from "storejs";
-import words from "./words";
+//import words from "./words";
 import config from "./config";
 import { service } from "@/service";
 import pako from "pako";
-import wordlist from "./wordlist.json";
+//import wordlist from "./wordlist.json";
 //require("lzma");
 const uint8base64 = require("byte-base64");
 const lzma = require("lzma/src/lzma_worker.js").LZMA_WORKER;
+let wordlist={};
+let words="";
 wordlist["custom"] = words
   .split(/\n+/)
   .filter((e) => e.trim())
@@ -358,11 +360,11 @@ export default {
 
           for (let ee of items) {
             let item;
-            if (this.map[ee.en] == undefined) {
+            if (this.enMap[ee.en] == undefined) {
               item = {};
               this.items.push(item);
               Object.assign(item, ee);
-              this.map[item.en] = this.items.length - 1;
+              this.enMap[item.en] = this.items.length - 1;
             }
           }
 
@@ -528,6 +530,7 @@ export default {
       }
     },
     async trans(item) {
+      console.log(item);
       let langs = this.config.langs;
       if (item.en) {
         for (var i = 0; i < langs.length; i++) {

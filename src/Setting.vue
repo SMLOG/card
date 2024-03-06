@@ -15,33 +15,67 @@
     <div>
       <div>Enable Language:</div>
       <div v-for="lan in config.langs || []" :key="lan">
-        {{ lan }}
-        <input
+          {{ lan }}
+        <input :disabled="local.lock"
           type="checkbox"
           v-model="config.enable[lan]"
-          @change="saveConfig()"
+          @change="save()" 
         />
+
       </div>
+    </div>
+    <div>passNum:<input v-model.number="config._passNum" min="1" @blur="save(config)"  :disabled="local.lock" /></div>
+    <div>
+
+      <span>Estimate Url:</span>
+      <input v-model="config._estUrl"   @change="save()" />
     </div>
 
     <div>
       <a @click="openGame(config.gameTime1, 1)" style="cursor: pointer"
-        >Change password</a
+        >Skip Test</a
       >
+    </div>
+    <div>
+      <a @click="updatePass()" style="cursor: pointer"
+        >Update Pass</a
+      >
+    </div>
+    <div>
+      <a @click="toggleLock">Locked:</a>{{ local.lock?"Y":"N" }}
     </div>
   </div>
 </template>
 <script>
+
 export default {
   data() {
-    return {};
+    return {
+    };
   },
 
   mounted() {},
   methods: {
+    save(config){
+      if(!this.lock)
+      this.saveConfig(config);
+    },
+    toggleLock(){
+      if(!this.local.pass || prompt("Current password") == this.local.pass){
+        this.saveLocal({lock:!this.local.lock})
+      }
+    },
+    updatePass(){
+      if(!this.local.pass || prompt("Current password") == this.local.pass){
+        this.saveLocal({pass:prompt("New password")})
+
+        alert('ok')
+      }
+      
+    },
     toggleSound() {
       this.config.sound = this.config.sound ? "" : "YD";
-      this.saveConfig();
+      this.save();
     },
 
     refreshCache() {
@@ -53,8 +87,8 @@ export default {
         });
       }
     },
-    openGame(minus, changepw) {
-      this.$emit("openGame", minus, changepw);
+    openGame(minus, uisngpwd) {
+      this.$emit("openGame", minus, uisngpwd);
     },
   },
 

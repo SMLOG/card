@@ -4,6 +4,7 @@ const config = {
     passNum: 40,
     gameTime1: 3,
     gameTime2: 6,
+    _estUrl:'',
     langs: ["en", "zh", "yue"],
     tips: {
         en: ["no no no", "oh sorry.", "incorrect", "come on."],

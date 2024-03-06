@@ -6,7 +6,12 @@ Vue.use(Vuex);
 let store = localStorage;
 export default new Vuex.Store({
   state: {
+    local:Object.assign({
+      mode:1,
+      lock:0,
+      pass:''
 
+    },store.local ? JSON.parse(store.local) : {}),
     config: Object.assign({
       url: "https://smlog.github.io/data/dict.js",
       enable: {},
@@ -17,7 +22,11 @@ export default new Vuex.Store({
     items: store.items ? JSON.parse(store.items) : []
   },
   mutations: {
-
+    local(state, local) {
+      state.local = Object.assign(state.local, local);
+      store.local = JSON.stringify(state.local)
+      console.log(local)
+    },
     config(state, config) {
       state.config = Object.assign(state.config, config);
       store.config = JSON.stringify(state.config);

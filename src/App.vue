@@ -11,7 +11,7 @@
     >
       <template>
         <font-awesome-icon
-          v-for="i in config.passNum"
+          v-for="i in config._passNum"
           :key="i"
           icon="star"
           fixed-width
@@ -93,7 +93,7 @@
         />Next</span
       >
       <span style="margin-left: 10px">
-        <select v-model="mode">
+        <select v-model="mode" @change="saveLocal({mode:mode})" :disabled="local.lock" >
           <option value="1">Listen</option>
           <option value="0">Read</option>
           <option value="3">Write</option>
@@ -243,7 +243,6 @@ export default {
       lans: ["en"],
       lanMode: "auto",
       startCount: 0,
-      mode: 1,
       fill: [],
       letters2: [],
       letters: [],
@@ -330,22 +329,14 @@ export default {
       // send message to SW to skip the waiting and activate the new SW
       this.registration.waiting.postMessage({ type: "SKIP_WAITING" });
     },
-    openGame(minus, changePwd = 0) {
+    openGame(minus, uisngPwd = 0) {
       let pwd = storejs.get("pwd");
-      if (pwd) {
-        let curpwd = prompt("pwd");
+      if (pwd && uisngPwd) {
+        let curpwd = prompt("current pwd:");
         if (curpwd == pwd) {
-          if (changePwd) {
-            pwd = prompt("setting pwd");
-            let pwd2 = prompt("setting pwd");
-            if (pwd == pwd2) storejs.set("pwd", pwd);
-          } else this.startShowGame(minus);
+          this.startShowGame(minus);
         }
       } else {
-        pwd = prompt("setting pwd");
-        if (pwd) {
-          storejs.set("pwd", pwd);
-        }
         this.startShowGame(minus);
       }
     },
@@ -432,6 +423,9 @@ export default {
     startShowGame(time) {
       this.clockt = parseInt(time * 60 * 1000);
       this.showGameIf = true;
+      if(this.config._estUrl){
+        fetch(this.config._estUrl);
+      }
       if (this.clockTimer) clearInterval(this.clockTimer);
 
       this.clockTimer = setInterval(() => {
@@ -478,7 +472,7 @@ export default {
         }
         await this.say(targetText);
 
-        if (this.rightCn - this.wrongCn >= this.config.passNum) {
+        if (this.rightCn - this.wrongCn >= this.config._passNum) {
           this.rightCn = 0;
 
           return this.startShowGame(this.config.gameTime2);
