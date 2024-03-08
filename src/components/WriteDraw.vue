@@ -3,6 +3,7 @@
     <div id="container">
       <canvas id="canvasbg"></canvas>
       <canvas id="maskCanvas"></canvas>
+      <canvas id="nextCanvas"></canvas>
       <canvas id="canvas" style="z-index: 1;"></canvas>
     </div>
 
@@ -44,6 +45,8 @@ export default {
     const canvas = document.getElementById("canvas");
     const canvasbg = document.getElementById("canvasbg");
     const maskCanvas = document.getElementById("maskCanvas");
+    const nextCanvas = document.getElementById("nextCanvas");
+    
     const playBtn = document.getElementById("playBtn");
     const maskBtn = document.getElementById("maskBtn");
     const clearBtn = document.getElementById("clearBtn");
@@ -58,7 +61,7 @@ export default {
     let recordedData = [];
     let isDrawing = false;
     let lastDrawTime = 0;
-    let maskDatas;
+    let maskDatas=[];
     let  recordedDatas = [];
 
     playBtn.addEventListener("click", playAnimation);
@@ -77,8 +80,8 @@ export default {
 
 
     function resizeCanvas() {
-      maskCanvas.width=canvasbg.width = canvas.width = container.offsetWidth;
-      maskCanvas.height=canvasbg.height = canvas.height = container.offsetHeight;
+      nextCanvas.width=maskCanvas.width=canvasbg.width = canvas.width = container.offsetWidth;
+      nextCanvas.height=maskCanvas.height=canvasbg.height = canvas.height = container.offsetHeight;
       
       drawGrid();
     }
@@ -95,11 +98,23 @@ export default {
     }
 
     function mask(){
+
       maskDatas = recordedDatas.slice();
       console.log(maskDatas)
+      clearCanvas(maskCanvas);
       drawPaths(maskCanvas,maskDatas,0,"#ddd")
       reset();
     }
+    async function animationNextPath(){
+      clearCanvas(nextCanvas);
+      if(maskDatas.length && recordedDatas.length<maskDatas.length){
+        await drawPaths(nextCanvas,[maskDatas[recordedDatas.length]],true,0,2);
+      }
+      await sleep(500);
+      await animationNextPath();
+
+    }
+    animationNextPath();
     function playAnimation() {
       if (recordedDatas.length === 0) {
         return;
@@ -175,9 +190,8 @@ export default {
     async function sleep(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
-    async function drawPaths(canvas,recordedDatas,anim,color2) {
+    async function drawPaths(canvas,recordedDatas,anim,color2,speech=1) {
       let ctx = canvas.getContext('2d');
-      clearCanvas(canvas);
       ctx.beginPath();
 
       for(let r=0;r<recordedDatas.length;r++)
@@ -197,7 +211,7 @@ export default {
           ctx.stroke();
         }
         if(anim)
-          await sleep(t);
+          await sleep(t*speech);
       }
     }
 
