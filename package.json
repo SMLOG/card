@@ -33,6 +33,7 @@
     "register-service-worker": "^1.7.1",
     "store": "^2.0.12",
     "storejs": "^2.0.1",
+    "tesseract.js": "^5.0.5",
     "video.js": "^7.17.0",
     "videojs-contrib-hls": "^5.15.0",
     "videojs-contrib-quality-levels": "^2.1.0",

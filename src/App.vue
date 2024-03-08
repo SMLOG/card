@@ -33,8 +33,9 @@
     >
       {{ list[curIndex][lan] }}
     </div>
+    <WriteDraw v-if="mode==4" :word="list[curIndex]" :lan="lan" />
 
-    <ul class="figure-list" style="text-align: center">
+    <ul class="figure-list" style="text-align: center" v-if="mode!=4">
       <li
         v-for="(item, k) in list"
         :key="k"
@@ -94,9 +95,10 @@
       >
       <span style="margin-left: 10px">
         <select v-model="mode" @change="saveLocal({mode:mode})" :disabled="local.lock" >
-          <option value="1">Listen</option>
-          <option value="0">Read</option>
-          <option value="3">Write</option>
+          <option value="1">1.Listen</option>
+          <option value="0">0.Read</option>
+          <option value="3">3.Write</option>
+          <option value="4">4.Write2</option>
         </select></span
       >
       <span @click="refresh()" style="margin-left: 10px">
@@ -215,7 +217,7 @@ import storejs from "storejs";
 import pako from "pako";
 import $ from "jquery";
 //import dictList from "./dict.json";
-
+import WriteDraw from './components/WriteDraw.vue';
 import GameList from "./components/GameList.vue";
 import Setting from "./Setting.vue";
 export default {
@@ -224,6 +226,7 @@ export default {
       once: true,
     });
   },
+ 
   data: () => {
     return {
       showgame: 1,
@@ -257,7 +260,7 @@ export default {
       showSetting: 0,
     };
   },
-  components: { GameList, Setting },
+  components: { GameList, Setting,WriteDraw },
   mounted: function () {
     let mya = $(
       `<iframe id="myaudio" style="display:none;" referrerpolicy="no-referrer" />`
@@ -583,9 +586,11 @@ export default {
           audio.onended = function () {
             return resove(1);
           };
+          try{
           audio.src = ttslist[i];
 
           audio.play();
+        }catch(ee){console.error(ee)}
         });
         if (r > 0) break;
       }
