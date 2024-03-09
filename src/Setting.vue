@@ -50,7 +50,9 @@
     <div>
       Mask Color:<input type="color"  v-model="maskColor">
     </div>
-    
+    <div>
+      Next Speed: <input type="range" min="1" max="5" step="1"  v-model.number="nextSpeed"> {{ nextSpeed }}
+    </div>
   </div>
 </template>
 <script>
@@ -107,11 +109,16 @@ export default {
       set(newValue) {
         this.saveLocal({maskColor:newValue})
       },
-
-      
-    
+    },
+    nextSpeed:{
+      get() {
+        return  this.$store.state.local.nextSpeed;
+      },
+      set(newValue) {
+        this.saveLocal({nextSpeed:newValue})
+      },
     }
-    
+     
   },
   watch: {},
 };

@@ -12,14 +12,14 @@
   justify-content: space-between;
   width: 100%;">
         <button id="playBtn">Play</button>
-        <button id="maskBtn" @click="isMask=!isMask" :class="{selected:isMask}">Mask</button>
+        <button ref="maskBtn" @click="isMask=!isMask" :class="{selected:isMask}">Mask</button>
         <button id="clearBtn">Clear</button>
       </div>
       <div id="topbts">
         <div style="display: flex;
 justify-content: space-between;
 width: 100%;">
-          <input type="range" id="lineWidthSlider" min="1" max="10" step="1" value="5">
+          <input type="range" min="1" max="20" step="1"  v-model="penWidth">
           <input type="color"   v-model="penColor">
         </div>
       </div>
@@ -31,7 +31,7 @@ width: 100%;">
 
 export default {
   data() {
-    return { isMask:0 };
+    return { isMask:0,penWidth:5 };
   },
   created() { },
   methods: {
@@ -55,7 +55,6 @@ export default {
     const nextCanvas = document.getElementById("nextCanvas");
     
     const playBtn = document.getElementById("playBtn");
-    const maskBtn = document.getElementById("maskBtn");
     const clearBtn = document.getElementById("clearBtn");
     const ctx = canvas.getContext("2d");
     const ctxbg = canvasbg.getContext("2d");
@@ -77,7 +76,7 @@ export default {
 }, { passive: false });
 
     playBtn.addEventListener("click", playAnimation);
-    maskBtn.addEventListener("click", mask);
+    this.$refs.maskBtn.addEventListener("click", mask);
     clearBtn.addEventListener("click", reset);
     canvas.addEventListener("touchstart", startDrawing);
     canvas.addEventListener("mousedown", startDrawing);
@@ -118,7 +117,7 @@ export default {
     async function animationNextPath(){
       clearCanvas(nextCanvas);
       if(maskDatas.length && recordedDatas.length<maskDatas.length){
-        await drawPaths(nextCanvas,[maskDatas[recordedDatas.length]],true,0,2);
+        await drawPaths(nextCanvas,[maskDatas[recordedDatas.length]],true,0,vue.local.nextSpeed);
       }
       await sleep(500);
       await animationNextPath();
@@ -170,7 +169,8 @@ export default {
     function stopDrawing() {
       isDrawing = false;
       console.log("stop");
-      recordedDatas.push(recordedData);
+      if(recordedData.length>1)
+         recordedDatas.push(recordedData);
       recordedData = [];
     }
 
@@ -186,9 +186,10 @@ export default {
         y: offsetY,
         t: new Date().getTime() - lastDrawTime.getTime(),
         color: ctx.strokeStyle,
-        width: ctx.lineWidth,
+        width: vue.penWidth,
       });
       ctx.strokeStyle = vue.penColor;
+      ctx.lineWidth = vue.penWidth;
       ctx.lineTo(offsetX, offsetY);
       ctx.stroke();
       lastDrawTime = new Date();
@@ -226,16 +227,7 @@ export default {
       }
     }
 
-    const slider = document.getElementById("lineWidthSlider");
-    slider.addEventListener("input", handleLineWidthChange);
 
-    function handleLineWidthChange() {
-      const lineWidth = slider.value;
-      ctx.lineWidth = lineWidth;
-    }
-
-    // Set default line width
-    ctx.lineWidth = slider.value;
 
     // Function to draw the grid
     function drawGrid() {
