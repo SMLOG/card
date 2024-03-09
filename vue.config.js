@@ -1,37 +1,6 @@
 const TerserPlugin = require("terser-webpack-plugin");
 
-class TimestampPlugin {
-  apply(compiler) {
-    compiler.hooks.compilation.tap("TimestampPlugin", (compilation) => {
-      compilation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync(
-        "TimestampPlugin",
-        (data, cb) => {
-          let timestamp = new Date().getTime();
-          data.head = data.head.map((item) => {
-            if (item.tagName === "link") {
-              item.attributes.href = item.attributes.href.replace(
-                item.attributes.href,
-                `${item.attributes.href}?${timestamp}`
-              );
-            }
-            return item;
-          });
 
-          data.body = data.body.map((item) => {
-            if (item.tagName === "script") {
-              item.attributes.src = item.attributes.src.replace(
-                item.attributes.src,
-                `${item.attributes.src}?${timestamp}`
-              );
-            }
-            return item;
-          });
-          cb(null, data);
-        }
-      );
-    });
-  }
-}
 
 let obj = {
   pages: {
@@ -44,7 +13,7 @@ let obj = {
     index: {
       template: "public/index.html",
       entry: "./src/main.js",
-      title: "gokidsapp",
+      title: "GoKidsApp - a simple app for kids",
     },
   },
   chainWebpack: (config) => {

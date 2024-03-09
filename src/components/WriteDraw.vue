@@ -4,7 +4,7 @@
       <canvas id="canvasbg"></canvas>
       <canvas id="maskCanvas"></canvas>
       <canvas id="nextCanvas"></canvas>
-      <canvas id="canvas" style="z-index: 1;"></canvas>
+      <canvas ref="canvas" id="canvas" style="z-index: 1;"></canvas>
     </div>
 
     <div id="bts" style="width:100%;">
@@ -13,16 +13,14 @@
   width: 100%;">
         <button id="playBtn">Play</button>
         <button id="maskBtn" @click="isMask=!isMask" :class="{selected:isMask}">Mask</button>
-        <button id="grid">Grid</button>
         <button id="clearBtn">Clear</button>
       </div>
       <div id="topbts">
-        <div style="    display: flex;
+        <div style="display: flex;
 justify-content: space-between;
 width: 100%;">
           <input type="range" id="lineWidthSlider" min="1" max="10" step="1" value="5">
-
-          <input type="color" id="colorPicker" name="colorPicker">
+          <input type="color"   v-model="penColor">
         </div>
       </div>
     </div>
@@ -40,6 +38,15 @@ export default {
 
 
   },
+  watch:{
+    "$store.state.local.grid": {
+      handler(value) {
+        const canvasbg = document.getElementById("canvasbg");
+        canvasbg.style.display=value?"":"none";
+      },
+    },
+
+  },
   mounted() {
 
     const canvas = document.getElementById("canvas");
@@ -52,7 +59,6 @@ export default {
     const clearBtn = document.getElementById("clearBtn");
     const ctx = canvas.getContext("2d");
     const ctxbg = canvasbg.getContext("2d");
-    const colorPicker = document.getElementById("colorPicker");
     const container = document.getElementById("container");
 
 
@@ -64,6 +70,12 @@ export default {
     let maskDatas=[];
     let  recordedDatas = [];
 
+    let vue=this;
+
+    document.addEventListener('touchmove', function(event) {
+    event.preventDefault();
+}, { passive: false });
+
     playBtn.addEventListener("click", playAnimation);
     maskBtn.addEventListener("click", mask);
     clearBtn.addEventListener("click", reset);
@@ -73,16 +85,14 @@ export default {
     canvas.addEventListener("touchend", stopDrawing);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("touchmove", draw);
-    colorPicker.addEventListener("change", (e) => {
-      const color = e.target.value;
-      ctx.strokeStyle = color;
-    });
+
 
 
     function resizeCanvas() {
       nextCanvas.width=maskCanvas.width=canvasbg.width = canvas.width = container.offsetWidth;
       nextCanvas.height=maskCanvas.height=canvasbg.height = canvas.height = container.offsetHeight;
       
+      if(vue.local.grid)
       drawGrid();
     }
 
@@ -102,7 +112,7 @@ export default {
       maskDatas = recordedDatas.slice();
       console.log(maskDatas)
       clearCanvas(maskCanvas);
-      drawPaths(maskCanvas,maskDatas,0,"#ddd")
+      drawPaths(maskCanvas,maskDatas,0,vue.local.maskColor)
       reset();
     }
     async function animationNextPath(){
@@ -178,6 +188,7 @@ export default {
         color: ctx.strokeStyle,
         width: ctx.lineWidth,
       });
+      ctx.strokeStyle = vue.penColor;
       ctx.lineTo(offsetX, offsetY);
       ctx.stroke();
       lastDrawTime = new Date();
@@ -226,17 +237,6 @@ export default {
     // Set default line width
     ctx.lineWidth = slider.value;
 
-    const gridBtn = document.getElementById("grid");
-
-    gridBtn.addEventListener("click", toggleGrid);
-
-
-    let enableGrid = true;
-    function toggleGrid() {
-      console.log(enableGrid)
-      enableGrid = !enableGrid;
-      canvasbg.style.display = enableGrid ? '' : 'none';
-    }
     // Function to draw the grid
     function drawGrid() {
 
@@ -269,14 +269,25 @@ export default {
 
   },
   computed: {
+    penColor:{
+      get() {
+        return  this.$store.state.local.penColor;
+      },
+      set(newValue) {
+        this.saveLocal({penColor:newValue});
+      },
 
+      
+    
+    }
+    
   },
 };
 </script>
 
 <style scoped>
 button {
-  font-size: 200%;
+  font-size: 150%;
 }
 
 #topbts {
@@ -314,6 +325,7 @@ canvas {
   bottom: 0;
   z-index: 1;
   left: 0;
+  background: #ddd;
 }
 .selected{background-color: blue;}
 </style>

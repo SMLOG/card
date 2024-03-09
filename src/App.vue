@@ -204,7 +204,7 @@
     </div>
     <setting
       ref="setting"
-      style="background: white; padding: 10px"
+      style="background: #ddd; padding: 10px"
       class="centered"
       v-show="showSetting"
       @openGame="openGame"

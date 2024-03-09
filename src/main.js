@@ -34,6 +34,7 @@ new Vue({
   },
 }).$mount("#app");
 
+
 //阻止safari浏览器双击放大功能
 let lastTouchEnd = 0; //更新手指弹起的时间
 document.documentElement.addEventListener("touchstart", function (event) {

@@ -44,6 +44,13 @@
     <div>
       <a @click="toggleLock">Locked:</a>{{ local.lock?"Y":"N" }}
     </div>
+    <div>
+      <a @click="saveLocal({grid:!local.grid})">Grid:</a>{{ local.grid?"Y":"N" }}
+    </div>
+    <div>
+      Mask Color:<input type="color"  v-model="maskColor">
+    </div>
+    
   </div>
 </template>
 <script>
@@ -92,7 +99,20 @@ export default {
     },
   },
 
-  computed: {},
+  computed: {
+    maskColor:{
+      get() {
+        return  this.$store.state.local.maskColor;
+      },
+      set(newValue) {
+        this.saveLocal({maskColor:newValue})
+      },
+
+      
+    
+    }
+    
+  },
   watch: {},
 };
 </script>

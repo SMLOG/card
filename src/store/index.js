@@ -9,7 +9,10 @@ export default new Vuex.Store({
     local:Object.assign({
       mode:1,
       lock:0,
-      pass:''
+      pass:'',
+      grid:false,
+      maskColor:"#ddd",
+      penColor:"black"
 
     },store.local ? JSON.parse(store.local) : {}),
     config: Object.assign({
