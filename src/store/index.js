@@ -11,6 +11,7 @@ export default new Vuex.Store({
       lock:0,
       pass:'',
       grid:false,
+      maskWord:false,
       maskColor:"#ddd",
       penColor:"black",
       nextSpeed:2

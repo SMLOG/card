@@ -1,6 +1,9 @@
 <template>
   <div>
     <div id="container">
+      <div v-if="word&&maskWord" class="spell">
+        <div v-html="fmtWords()"></div>
+      </div>
       <canvas id="canvasbg"></canvas>
       <canvas id="maskCanvas"></canvas>
       <canvas id="nextCanvas"></canvas>
@@ -28,15 +31,25 @@ width: 100%;">
 </template>
 
 <script>
-
+import { createWorker } from 'tesseract.js';
 export default {
+  props: ['word', 'lan'],
   data() {
     return { isMask:0,penWidth:5 };
   },
   created() { },
   methods: {
-
-
+    fmtWords(){
+      let lan=this.lan;
+      let word = this.word;
+    return (lan == 'en' ? word[lan].split( /[^a-z]/gi):word[lan].split('')).join('<br />');
+    },
+    async recognize(){
+        const worker = await createWorker('chi_tra');
+        const ret = await worker.recognize(this.$refs.canvas.toDataURL());
+        console.log(ret.data.text);
+        await worker.terminate();
+    }
   },
   watch:{
     "$store.state.local.grid": {
@@ -46,6 +59,7 @@ export default {
       },
     },
 
+    
   },
   mounted() {
 
@@ -119,6 +133,7 @@ export default {
       if(maskDatas.length && recordedDatas.length<maskDatas.length){
         await drawPaths(nextCanvas,[maskDatas[recordedDatas.length]],true,0,vue.local.nextSpeed);
       }
+
       await sleep(500);
       await animationNextPath();
 
@@ -133,7 +148,7 @@ export default {
       if (!isPlaying) {
         return;
       }
-      drawPaths(canvas,recordedDatas,true);
+      drawPaths(canvas,recordedDatas,true,0,vue.local.nextSpeed);
     }
 
     function getOffset(e) {
@@ -172,6 +187,12 @@ export default {
       if(recordedData.length>1)
          recordedDatas.push(recordedData);
       recordedData = [];
+
+      if(vue.isMask && recordedDatas.length == maskDatas.length){
+        if(maskDatas.length==recordedDatas.length){
+        vue.recognize();
+      }
+      }
     }
 
     function draw(event) {
@@ -320,4 +341,18 @@ canvas {
   background: #ddd;
 }
 .selected{background-color: blue;}
+.spell{
+  height: 100%;
+     width: 100%; 
+    font-size: calc(min(25vw, 25vh));
+    color:#eee;
+    z-index:-1;
+    position: absolute;
+    display: flex;
+    align-items: center;
+  justify-content: center;
+  text-align: center;
+  word-break: break-all;
+  background-color: transparent;
+}
 </style>

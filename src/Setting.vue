@@ -48,6 +48,10 @@
       <a @click="saveLocal({grid:!local.grid})">Grid:</a>{{ local.grid?"Y":"N" }}
     </div>
     <div>
+      <a @click="saveLocal({maskWord:!local.maskWord})">maskWord:</a>{{ local.maskWord?"Y":"N" }}
+    </div>
+    
+    <div>
       Mask Color:<input type="color"  v-model="maskColor">
     </div>
     <div>
@@ -102,23 +106,7 @@ export default {
   },
 
   computed: {
-    maskColor:{
-      get() {
-        return  this.$store.state.local.maskColor;
-      },
-      set(newValue) {
-        this.saveLocal({maskColor:newValue})
-      },
-    },
-    nextSpeed:{
-      get() {
-        return  this.$store.state.local.nextSpeed;
-      },
-      set(newValue) {
-        this.saveLocal({nextSpeed:newValue})
-      },
-    }
-     
+
   },
   watch: {},
 };
