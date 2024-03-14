@@ -21,7 +21,7 @@
     </div>
     <div
       class="word"
-      v-if="mode != 3 && list.length > 0 && curIndex >= 0"
+      v-if="mode != 3&&mode != 4 && list.length > 0 && curIndex >= 0"
       style="
         color: dodgerblue;
         font-size: 300%;

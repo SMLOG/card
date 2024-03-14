@@ -1,7 +1,21 @@
 <template>
-  <div>
+  <div  style="display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;">
+        <div id="topbts" >
+        <div style="display: flex;
+justify-content: space-between;
+width: 100%;">
+          <input type="range" min="1" max="20" step="1"  v-model="penWidth">
+          <input type="color"   v-model="penColor">
+        </div>
+      </div>
     <div id="container">
-      <div v-if="word&&maskWord" class="spell">
+      <div v-if="word&&maskWord&&false" class="spell">
         <div v-html="fmtWords()"></div>
       </div>
       <canvas id="canvasbg"></canvas>
@@ -14,19 +28,13 @@
       <div style="    display: flex;
   justify-content: space-between;
   width: 100%;">
-        <button id="playBtn">Play</button>
+        <button id="playBtn" @click="clickPaly()" :class="{selected:loopPlay==2}">Play</button>
         <button ref="maskBtn" @click="isMask=!isMask" :class="{selected:isMask}">Mask</button>
         <button id="clearBtn">Clear</button>
       </div>
-      <div id="topbts">
-        <div style="display: flex;
-justify-content: space-between;
-width: 100%;">
-          <input type="range" min="1" max="20" step="1"  v-model="penWidth">
-          <input type="color"   v-model="penColor">
-        </div>
-      </div>
+
     </div>
+
   </div>
 </template>
 
@@ -35,7 +43,7 @@ import { createWorker } from 'tesseract.js';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask:0,penWidth:5 };
+    return { isMask:0,penWidth:5,loopPlay:0 };
   },
   created() { },
   methods: {
@@ -43,6 +51,10 @@ export default {
       let lan=this.lan;
       let word = this.word;
     return (lan == 'en' ? word[lan].split( /[^a-z]/gi):word[lan].split('')).join('<br />');
+    },
+    clickPaly(){
+      this.loopPlay++;
+      if(this.loopPlay>2)this.loopPlay=0;
     },
     async recognize(){
         const worker = await createWorker('chi_tra');
@@ -120,12 +132,12 @@ export default {
       recordedDatas.length = 0;
     }
 
-    function mask(){
+    async function mask(){
 
       maskDatas = recordedDatas.slice();
       console.log(maskDatas)
       clearCanvas(maskCanvas);
-      drawPaths(maskCanvas,maskDatas,0,vue.local.maskColor)
+      await drawPaths(maskCanvas,maskDatas,0,vue.local.maskColor)
       reset();
     }
     async function animationNextPath(){
@@ -139,7 +151,9 @@ export default {
 
     }
     animationNextPath();
-    function playAnimation() {
+    async function playAnimation() {
+      do{
+    
       if (recordedDatas.length === 0) {
         return;
       }
@@ -148,7 +162,11 @@ export default {
       if (!isPlaying) {
         return;
       }
-      drawPaths(canvas,recordedDatas,true,0,vue.local.nextSpeed);
+    let r = await drawPaths(canvas,recordedDatas,true,0,vue.local.nextSpeed);
+    if(r)return;
+     await sleep(1000);
+    }while(vue.loopPlay==2);
+    vue.loopPlay=0;
     }
 
     function getOffset(e) {
@@ -226,11 +244,13 @@ export default {
     async function drawPaths(canvas,recordedDatas,anim,color2,speech=1) {
       let ctx = canvas.getContext('2d');
       ctx.beginPath();
+      let startId = canvas.startId = new Date().getTime();
 
       for(let r=0;r<recordedDatas.length;r++)
       for (let i = 0,paths=recordedDatas[r]; i < paths.length; i++) {
         const { x, y, t, color, width } = paths[i];
         console.log(x, y, t);
+        if(canvas.startId!=startId)return startId
 
         if (t < 0) {
           ctx.beginPath();
@@ -304,26 +324,21 @@ button {
 }
 
 #topbts {
-  position: fixed;
   top: 0;
   width: 100%;
   left: 0;
   right: 0;
-  height: 20px;
 }
 
 #container {
-  position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: -1;
+  flex-grow: 1;
 }
 
 canvas {
-  height: 100%;
-  width: 100%;
   display: block;
   box-sizing: border-box;
   position: absolute;
@@ -334,7 +349,6 @@ canvas {
 }
 
 #bts {
-  position: fixed;
   bottom: 0;
   z-index: 1;
   left: 0;
@@ -354,5 +368,9 @@ canvas {
   text-align: center;
   word-break: break-all;
   background-color: transparent;
+}
+.rotate button{
+  transform: rotate(-90deg);
+    transform-origin: top left;
 }
 </style>
