@@ -17,13 +17,13 @@ width: 100%;">
         <input type="range" min="1" max="20" step="1" v-model.number="penWidth">
       </span>
       <span>+
-        <input type="range" min="1" max="5" step="1" v-model.number="scale">
+        <input type="range" min="1" max="7" step="1" v-model.number="scale">
       </span>
         <input type="color" v-model="penColor">
       </div>
     </div>
 <div style="flex-grow: 1;">
-  <div id="container">
+  <div id="container" ref="container">
       <div v-if="word && maskWord && false" class="spell">
         <div v-html="fmtWords()"></div>
       </div>
@@ -54,12 +54,26 @@ import { createWorker } from 'tesseract.js';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask: 0, penWidth: 5, loopPlay: 0,scale:1,inputText:'' };
+    return { isMask: 0, penWidth: 5, loopPlay: 0,inputText:'' };
   },
   created() { },
   methods: {
+    resizeCanvas() {
+
+      let container = this.$refs.container;
+Array.from(container.querySelectorAll('canvas')).map(e=>{
+  e.width = container.offsetWidth;
+  e.height = container.offsetHeight
+  console.log('container',container.offsetWidth,container.offsetHeight);
+
+});
+
+if (this.local.grid)
+  this.drawGrid();
+},
     drawGrid() {
 
+      
       let canvasbg = this.$refs.canvasbg;
       let ctxbg = this.$refs.canvasbg.getContext('2d');
       ctxbg.strokeStyle = "#ddd";
@@ -169,7 +183,7 @@ export default {
     deep: true,
     handler(value) {
       console.log(value)
-      this.drawGrid();
+      this.resizeCanvas();
     }
   }
 
@@ -217,6 +231,8 @@ export default {
       Array.from(container.querySelectorAll('canvas')).map(e=>{
         e.width = container.offsetWidth;
         e.height = container.offsetHeight
+        console.log('container',container.offsetWidth,container.offsetHeight);
+
       });
 
       if (vue.local.grid)

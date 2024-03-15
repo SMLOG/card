@@ -100,7 +100,7 @@
       {{ list[curIndex][lan] }}
     </div>
 
-    <ul class="figure-list" style="text-align: center" >
+    <ul class="figure-list" style="text-align: center" v-if="mode!=4 || local.showPic" >
       <li
         v-for="(item, k) in list"
         :key="k"

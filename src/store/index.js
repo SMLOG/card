@@ -14,7 +14,9 @@ export default new Vuex.Store({
       maskWord:false,
       maskColor:"#ddd",
       penColor:"black",
-      nextSpeed:2
+      nextSpeed:2,
+      scale:1,
+      showPic:true
 
     },store.local ? JSON.parse(store.local) : {}),
     config: Object.assign({

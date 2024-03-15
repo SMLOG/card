@@ -1,37 +1,31 @@
-
 const mixin = {
   data() {
-    return {
-
-    };
+    return {};
   },
   methods: {
     saveConfig(config) {
-      console.error(config)
-        this.$store.commit('config', config)
+      console.error(config);
+      this.$store.commit("config", config);
     },
     saveItems(items) {
-      this.$store.commit('items', items)
+      this.$store.commit("items", items);
     },
     saveLocal(config) {
-      console.error(config)
-        this.$store.commit('local', config)
+      console.error(config);
+      this.$store.commit("local", config);
     },
-
   },
   computed: {
-    mode:{
+    mode: {
       get() {
-        return  this.$store.state.local.mode;
+        return this.$store.state.local.mode;
       },
       set(newValue) {
-        this.saveLocal({mode:newValue})
+        this.saveLocal({ mode: newValue });
       },
-
-      
     },
-    local(){
-      return  this.$store.state.local;
+    local() {
+      return this.$store.state.local;
     },
     config() {
       return this.$store.state.config;
@@ -39,31 +33,46 @@ const mixin = {
     items() {
       return this.$store.state.items;
     },
-    maskColor:{
+    maskColor: {
       get() {
-        return  this.$store.state.local.maskColor;
+        return this.$store.state.local.maskColor;
       },
       set(newValue) {
-        this.saveLocal({maskColor:newValue})
+        this.saveLocal({ maskColor: newValue });
       },
     },
-    nextSpeed:{
+    nextSpeed: {
       get() {
-        return  this.$store.state.local.nextSpeed;
+        return this.$store.state.local.nextSpeed;
       },
       set(newValue) {
-        this.saveLocal({nextSpeed:newValue})
+        this.saveLocal({ nextSpeed: newValue });
       },
-    }   , maskWord:{
+    },
+    maskWord: {
       get() {
-        return  this.$store.state.local.maskWord;
+        return this.$store.state.local.maskWord;
       },
       set(newValue) {
-        this.saveLocal({maskWord:newValue})
+        this.saveLocal({ maskWord: newValue });
       },
-    }
-     
-  }
-
+    },
+    scale: {
+      get() {
+        return this.$store.state.local.scale;
+      },
+      set(newValue) {
+        this.saveLocal({ scale: newValue });
+      },
+    },
+    showPic: {
+      get() {
+        return this.$store.state.local.showPic;
+      },
+      set(newValue) {
+        this.saveLocal({ showPic: newValue });
+      },
+    },
+  },
 };
 export default mixin;

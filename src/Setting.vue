@@ -50,13 +50,16 @@
     <div>
       <a @click="saveLocal({maskWord:!local.maskWord})">maskWord:</a>{{ local.maskWord?"Y":"N" }}
     </div>
-    
+    <div>
+      <a @click="saveLocal({showPic:!local.showPic})">showPic:</a>{{ local.showPic?"Y":"N" }}
+    </div>
     <div>
       Mask Color:<input type="color"  v-model="maskColor">
     </div>
     <div>
       Next Speed: <input type="range" min="1" max="5" step="1"  v-model.number="nextSpeed"> {{ nextSpeed }}
     </div>
+    
   </div>
 </template>
 <script>
