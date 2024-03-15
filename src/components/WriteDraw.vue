@@ -14,10 +14,10 @@ width: 100%;">
           icon="pen"
           fixed-width
         />
-        <input type="range" min="1" max="20" step="1" v-model="penWidth">
+        <input type="range" min="1" max="20" step="1" v-model.number="penWidth">
       </span>
       <span>+
-        <input type="range" min="1" max="5" step="1" v-model="scale">
+        <input type="range" min="1" max="5" step="1" v-model.number="scale">
       </span>
         <input type="color" v-model="penColor">
       </div>
@@ -66,8 +66,8 @@ export default {
 
       ctxbg.clearRect(0, 0, canvasbg.width, canvasbg.height);
 
-      const lineSpacing = 40; // 调整每行的间距
-
+      const lineSpacing = 40*(this.scale*(1+0.1)); // 调整每行的间距
+      console.log('lineSpacing',lineSpacing)
       ctxbg.setLineDash([10, 10]);
 
       let cy = canvasbg.height / 2;
@@ -124,7 +124,7 @@ export default {
       if (this.word) {
         let text = this.word[this.lan];
         ctxbg.fillStyle = "#ddd";
-        ctxbg.fillText(text, lineSpacing, start + 1.5 * lineSpacing);
+        ctxbg.fillText(text, Math.min(lineSpacing,40), start + 1.5 * lineSpacing);
       }
 
 
@@ -153,6 +153,12 @@ export default {
       handler(value) {
         this.$refs.canvasbg.style.display = value ? "" : "none";
       },
+    },
+    scale:{
+      handler(value){
+        console.log(value);
+        this.drawGrid();
+      }
     },
     word: {
     deep: true,
