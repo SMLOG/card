@@ -40,6 +40,7 @@ width: 100%;">
   width: 100%;">
         <button id="playBtn" @click="clickPaly()" :class="{ selected: loopPlay == 2 }">Play</button>
         <button ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">Mask</button>
+        <input v-model="inputText" @focus="inputText=''" @blur="drawGrid" />
         <button id="clearBtn" @click="loopPlay = 0">Clear</button>
       </div>
 
@@ -53,7 +54,7 @@ import { createWorker } from 'tesseract.js';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask: 0, penWidth: 5, loopPlay: 0,scale:1 };
+    return { isMask: 0, penWidth: 5, loopPlay: 0,scale:1,inputText:'' };
   },
   created() { },
   methods: {
@@ -121,9 +122,13 @@ export default {
       ctxbg.font = 2 * lineSpacing + 'px Arial';
       ctxbg.textBaseline = 'middle';
       //ctxbg.textAlign = 'center';
+      ctxbg.fillStyle = "#ddd";
+      if(this.inputText.length){
+        ctxbg.fillText(this.inputText, Math.min(lineSpacing,40), start + 1.5 * lineSpacing);
+
+      }else
       if (this.word) {
         let text = this.word[this.lan];
-        ctxbg.fillStyle = "#ddd";
         ctxbg.fillText(text, Math.min(lineSpacing,40), start + 1.5 * lineSpacing);
       }
 
