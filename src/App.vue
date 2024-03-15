@@ -1,5 +1,11 @@
 <template>
-  <div style="user-select: none" id="con">
+  <div style="user-select: none;    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;" id="con">
     <div
       style="
         text-align: left;
@@ -19,51 +25,6 @@
           :class="{ enable: rightCn - wrongCn >= i }"
       /></template>
     </div>
-    <div
-      class="word"
-      v-if="mode != 3&&mode != 4 && list.length > 0 && curIndex >= 0"
-      style="
-        color: dodgerblue;
-        font-size: 300%;
-        font-weight: 900;
-        text-align: center;
-        margin-bottom: 10px;
-      "
-      @click="replay"
-    >
-      {{ list[curIndex][lan] }}
-    </div>
-    <WriteDraw v-if="mode==4" :word="list[curIndex]" :lan="lan" />
-
-    <ul class="figure-list" style="text-align: center" v-if="mode!=4">
-      <li
-        v-for="(item, k) in list"
-        :key="k"
-        class="card"
-        :class="{ click: clickIndex == k, ready: !selected }"
-        @click="select(k, item, $event)"
-      >
-        <div class="card__content">
-          <div class="itemText card__back">
-            <span style="font-weight: bold">{{ item[lan].toLowerCase() }}</span
-            ><span
-              :class="{ red: count(item) > 0, green: count(item) < 0 }"
-              v-if="count(item) != 0"
-              style="flex: 0; font-size: 80%; position: absolute; bottom: 0"
-              >{{ count(item) == 0 ? "" : count(item) > 0 ? "+" : ""
-              }}{{ count(item) }}</span
-            >
-          </div>
-          <figure
-            class="card__front"
-            style="cursor: pointer"
-            :style="{
-              backgroundImage: `url(${getImgUrl(item)})`,
-            }"
-          ></figure>
-        </div>
-      </li>
-    </ul>
     <div
       style="
         cursor: pointer;
@@ -122,6 +83,53 @@
         referrerpolicy="no-referrer"
       ></audio>
     </div>
+    <div style="flex-grow: 1;position: relative;">
+    <div
+      class="word"
+      v-if="mode != 3&&mode != 4 && list.length > 0 && curIndex >= 0"
+      style="
+        color: dodgerblue;
+        font-size: 300%;
+        font-weight: 900;
+        text-align: center;
+        margin-bottom: 10px;
+      "
+      @click="replay"
+    >
+      {{ list[curIndex][lan] }}
+    </div>
+    <WriteDraw v-if="mode==4" :word="list[curIndex]" :lan="lan" />
+
+    <ul class="figure-list" style="text-align: center" v-if="mode!=4">
+      <li
+        v-for="(item, k) in list"
+        :key="k"
+        class="card"
+        :class="{ click: clickIndex == k, ready: !selected }"
+        @click="select(k, item, $event)"
+      >
+        <div class="card__content">
+          <div class="itemText card__back">
+            <span style="font-weight: bold">{{ item[lan].toLowerCase() }}</span
+            ><span
+              :class="{ red: count(item) > 0, green: count(item) < 0 }"
+              v-if="count(item) != 0"
+              style="flex: 0; font-size: 80%; position: absolute; bottom: 0"
+              >{{ count(item) == 0 ? "" : count(item) > 0 ? "+" : ""
+              }}{{ count(item) }}</span
+            >
+          </div>
+          <figure
+            class="card__front"
+            style="cursor: pointer"
+            :style="{
+              backgroundImage: `url(${getImgUrl(item)})`,
+            }"
+          ></figure>
+        </div>
+      </li>
+    </ul>
+
     <div style="text-align: center" class="board" v-if="mode == 3">
       <div>
         <div style="position: relative">
@@ -171,6 +179,7 @@
           </template>
         </div>
       </div>
+    </div>
     </div>
 
     <div v-if="showGameIf" style="background: white">

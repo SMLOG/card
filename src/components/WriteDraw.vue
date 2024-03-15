@@ -5,17 +5,25 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: -1;
     bottom: 0;">
     <div id="topbts">
       <div style="display: flex;
 justify-content: space-between;
 width: 100%;">
+<span><font-awesome-icon
+          icon="pen"
+          fixed-width
+        />
         <input type="range" min="1" max="20" step="1" v-model="penWidth">
+      </span>
+      <span>+
+        <input type="range" min="1" max="5" step="1" v-model="scale">
+      </span>
         <input type="color" v-model="penColor">
       </div>
     </div>
-    <div id="container">
+<div style="flex-grow: 1;">
+  <div id="container">
       <div v-if="word && maskWord && false" class="spell">
         <div v-html="fmtWords()"></div>
       </div>
@@ -24,6 +32,7 @@ width: 100%;">
       <canvas id="nextCanvas"></canvas>
       <canvas ref="canvas" id="canvas" style="z-index: 1;"></canvas>
     </div>
+</div>
 
     <div id="bts" style="width:100%;">
       <div style="    display: flex;
@@ -44,7 +53,7 @@ import { createWorker } from 'tesseract.js';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask: 0, penWidth: 5, loopPlay: 0 };
+    return { isMask: 0, penWidth: 5, loopPlay: 0,scale:1 };
   },
   created() { },
   methods: {
@@ -392,6 +401,10 @@ button {
   bottom: 0;
   left: 0;
   flex-grow: 1;
+  height: 100%;
+    width: 100%;
+
+
 }
 
 canvas {
