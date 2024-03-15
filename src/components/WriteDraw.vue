@@ -1,24 +1,25 @@
 <template>
-  <div  style="display: flex;
+  <div style="display: flex;
     flex-direction: column;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
+    z-index: -1;
     bottom: 0;">
-        <div id="topbts" >
-        <div style="display: flex;
+    <div id="topbts">
+      <div style="display: flex;
 justify-content: space-between;
 width: 100%;">
-          <input type="range" min="1" max="20" step="1"  v-model="penWidth">
-          <input type="color"   v-model="penColor">
-        </div>
+        <input type="range" min="1" max="20" step="1" v-model="penWidth">
+        <input type="color" v-model="penColor">
       </div>
+    </div>
     <div id="container">
-      <div v-if="word&&maskWord&&false" class="spell">
+      <div v-if="word && maskWord && false" class="spell">
         <div v-html="fmtWords()"></div>
       </div>
-      <canvas id="canvasbg"></canvas>
+      <canvas ref="canvasbg"></canvas>
       <canvas id="maskCanvas"></canvas>
       <canvas id="nextCanvas"></canvas>
       <canvas ref="canvas" id="canvas" style="z-index: 1;"></canvas>
@@ -28,9 +29,9 @@ width: 100%;">
       <div style="    display: flex;
   justify-content: space-between;
   width: 100%;">
-        <button id="playBtn" @click="clickPaly()" :class="{selected:loopPlay==2}">Play</button>
-        <button ref="maskBtn" @click="isMask=!isMask" :class="{selected:isMask}">Mask</button>
-        <button id="clearBtn">Clear</button>
+        <button id="playBtn" @click="clickPaly()" :class="{ selected: loopPlay == 2 }">Play</button>
+        <button ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">Mask</button>
+        <button id="clearBtn" @click="loopPlay = 0">Clear</button>
       </div>
 
     </div>
@@ -43,63 +44,140 @@ import { createWorker } from 'tesseract.js';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask:0,penWidth:5,loopPlay:0 };
+    return { isMask: 0, penWidth: 5, loopPlay: 0 };
   },
   created() { },
   methods: {
-    fmtWords(){
-      let lan=this.lan;
+    drawGrid() {
+
+      let canvasbg = this.$refs.canvasbg;
+      let ctxbg = this.$refs.canvasbg.getContext('2d');
+      ctxbg.strokeStyle = "#ddd";
+      ctxbg.lineWidth = 1;
+
+      ctxbg.clearRect(0, 0, canvasbg.width, canvasbg.height);
+
+      const lineSpacing = 40; // 调整每行的间距
+
+      ctxbg.setLineDash([10, 10]);
+
+      let cy = canvasbg.height / 2;
+      /*ctxbg.beginPath();
+      ctxbg.moveTo(0, cy);
+      ctxbg.lineTo(canvasbg.width, cy);
+      ctxbg.stroke();*/
+
+
+
+
+      cy -= 1.5 * lineSpacing;
+
+
+      let nums = parseInt(cy / (3 * lineSpacing)) * 2 + 1;
+
+      let start = cy -= parseInt(cy / (3 * lineSpacing)) * 3 * lineSpacing;
+
+      for (let i = 0; i < nums; i++) {
+        ctxbg.beginPath();
+        ctxbg.setLineDash([]);
+        //cy+=lineSpacing;
+        ctxbg.moveTo(0, cy);
+        ctxbg.lineTo(canvasbg.width, cy);
+        ctxbg.stroke();
+
+        cy += lineSpacing;
+        ctxbg.beginPath();
+        ctxbg.setLineDash([10, 10]);
+        ctxbg.moveTo(0, cy);
+        ctxbg.lineTo(canvasbg.width, cy);
+        ctxbg.stroke();
+
+        cy += lineSpacing;
+        ctxbg.moveTo(0, cy);
+        ctxbg.lineTo(canvasbg.width, cy);
+        ctxbg.stroke();
+
+        ctxbg.beginPath();
+        ctxbg.setLineDash([]);
+        cy += lineSpacing;
+        ctxbg.moveTo(0, cy);
+        ctxbg.lineTo(canvasbg.width, cy);
+        ctxbg.stroke();
+      }
+
+
+
+      ctxbg.fillStyle = 'black';
+      //ctxbg.lineWidth = 2;
+      ctxbg.font = 2 * lineSpacing + 'px Arial';
+      ctxbg.textBaseline = 'middle';
+      //ctxbg.textAlign = 'center';
+      if (this.word) {
+        let text = this.word[this.lan];
+        ctxbg.fillStyle = "#ddd";
+        ctxbg.fillText(text, lineSpacing, start + 1.5 * lineSpacing);
+      }
+
+
+
+
+
+    },
+    fmtWords() {
+      let lan = this.lan;
       let word = this.word;
-    return (lan == 'en' ? word[lan].split( /[^a-z]/gi):word[lan].split('')).join('<br />');
+      return (lan == 'en' ? word[lan].split(/[^a-z]/gi) : word[lan].split('')).join('<br />');
     },
-    clickPaly(){
+    clickPaly() {
       this.loopPlay++;
-      if(this.loopPlay>2)this.loopPlay=0;
+      if (this.loopPlay > 2) this.loopPlay = 0;
     },
-    async recognize(){
-        const worker = await createWorker('chi_tra');
-        const ret = await worker.recognize(this.$refs.canvas.toDataURL());
-        console.log(ret.data.text);
-        await worker.terminate();
+    async recognize() {
+      const worker = await createWorker('chi_tra');
+      const ret = await worker.recognize(this.$refs.canvas.toDataURL());
+      console.log(ret.data.text);
+      await worker.terminate();
     }
   },
-  watch:{
+  watch: {
     "$store.state.local.grid": {
       handler(value) {
-        const canvasbg = document.getElementById("canvasbg");
-        canvasbg.style.display=value?"":"none";
+        this.$refs.canvasbg.style.display = value ? "" : "none";
       },
     },
+    word: {
+    deep: true,
+    handler(value) {
+      console.log(value)
+      this.drawGrid();
+    }
+  }
 
-    
   },
   mounted() {
 
     const canvas = document.getElementById("canvas");
-    const canvasbg = document.getElementById("canvasbg");
     const maskCanvas = document.getElementById("maskCanvas");
     const nextCanvas = document.getElementById("nextCanvas");
-    
+
     const playBtn = document.getElementById("playBtn");
     const clearBtn = document.getElementById("clearBtn");
     const ctx = canvas.getContext("2d");
-    const ctxbg = canvasbg.getContext("2d");
     const container = document.getElementById("container");
-
 
     let isRecording = false;
     let isPlaying = false;
     let recordedData = [];
     let isDrawing = false;
     let lastDrawTime = 0;
-    let maskDatas=[];
-    let  recordedDatas = [];
+    let maskDatas = [];
+    let recordedDatas = [];
 
-    let vue=this;
+    let vue = this;
 
-    document.addEventListener('touchmove', function(event) {
-    event.preventDefault();
-}, { passive: false });
+    document.addEventListener('touchmove', function (event) {
+      event.preventDefault();
+    }, { passive: false });
 
     playBtn.addEventListener("click", playAnimation);
     this.$refs.maskBtn.addEventListener("click", mask);
@@ -114,11 +192,15 @@ export default {
 
 
     function resizeCanvas() {
-      nextCanvas.width=maskCanvas.width=canvasbg.width = canvas.width = container.offsetWidth;
-      nextCanvas.height=maskCanvas.height=canvasbg.height = canvas.height = container.offsetHeight;
+
       
-      if(vue.local.grid)
-      drawGrid();
+      Array.from(container.querySelectorAll('canvas')).map(e=>{
+        e.width = container.offsetWidth;
+        e.height = container.offsetHeight
+      });
+
+      if (vue.local.grid)
+        vue.drawGrid();
     }
 
     window.addEventListener("resize", resizeCanvas);
@@ -132,18 +214,18 @@ export default {
       recordedDatas.length = 0;
     }
 
-    async function mask(){
+    async function mask() {
 
       maskDatas = recordedDatas.slice();
       console.log(maskDatas)
       clearCanvas(maskCanvas);
-      await drawPaths(maskCanvas,maskDatas,0,vue.local.maskColor)
+      await drawPaths(maskCanvas, maskDatas, 0, vue.local.maskColor)
       reset();
     }
-    async function animationNextPath(){
+    async function animationNextPath() {
       clearCanvas(nextCanvas);
-      if(maskDatas.length && recordedDatas.length<maskDatas.length){
-        await drawPaths(nextCanvas,[maskDatas[recordedDatas.length]],true,0,vue.local.nextSpeed);
+      if (maskDatas.length && recordedDatas.length < maskDatas.length) {
+        await drawPaths(nextCanvas, [maskDatas[recordedDatas.length]], true, 0, vue.local.nextSpeed);
       }
 
       await sleep(500);
@@ -152,21 +234,21 @@ export default {
     }
     animationNextPath();
     async function playAnimation() {
-      do{
-    
-      if (recordedDatas.length === 0) {
-        return;
-      }
-      isPlaying = true;
-      clearCanvas(canvas);
-      if (!isPlaying) {
-        return;
-      }
-    let r = await drawPaths(canvas,recordedDatas,true,0,vue.local.nextSpeed);
-    if(r)return;
-     await sleep(1000);
-    }while(vue.loopPlay==2);
-    vue.loopPlay=0;
+      do {
+
+        if (recordedDatas.length === 0) {
+          return;
+        }
+        isPlaying = true;
+        clearCanvas(canvas);
+        if (!isPlaying) {
+          return;
+        }
+        let r = await drawPaths(canvas, recordedDatas, true, 0, vue.local.nextSpeed);
+        if (r) return;
+        await sleep(1000);
+      } while (vue.loopPlay == 2);
+      vue.loopPlay = 0;
     }
 
     function getOffset(e) {
@@ -202,14 +284,14 @@ export default {
     function stopDrawing() {
       isDrawing = false;
       console.log("stop");
-      if(recordedData.length>1)
-         recordedDatas.push(recordedData);
+      if (recordedData.length > 1)
+        recordedDatas.push(recordedData);
       recordedData = [];
 
-      if(vue.isMask && recordedDatas.length == maskDatas.length){
-        if(maskDatas.length==recordedDatas.length){
-        vue.recognize();
-      }
+      if (vue.isMask && recordedDatas.length == maskDatas.length) {
+        if (maskDatas.length == recordedDatas.length) {
+          vue.recognize();
+        }
       }
     }
 
@@ -241,79 +323,53 @@ export default {
     async function sleep(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
-    async function drawPaths(canvas,recordedDatas,anim,color2,speech=1) {
+    async function drawPaths(canvas, recordedDatas, anim, color2, speech = 1) {
       let ctx = canvas.getContext('2d');
       ctx.beginPath();
       let startId = canvas.startId = new Date().getTime();
 
-      for(let r=0;r<recordedDatas.length;r++)
-      for (let i = 0,paths=recordedDatas[r]; i < paths.length; i++) {
-        const { x, y, t, color, width } = paths[i];
-        console.log(x, y, t);
-        if(canvas.startId!=startId)return startId
+      for (let r = 0; r < recordedDatas.length; r++)
+        for (let i = 0, paths = recordedDatas[r]; i < paths.length; i++) {
+          const { x, y, t, color, width } = paths[i];
+          console.log(x, y, t);
+          if (canvas.startId != startId) return startId
 
-        if (t < 0) {
-          ctx.beginPath();
+          if (t < 0) {
+            ctx.beginPath();
 
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineWidth = width;
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineWidth = width;
 
-          ctx.strokeStyle = color2 || color;
-          ctx.lineTo(x, y);
-          ctx.stroke();
+            ctx.strokeStyle = color2 || color;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          }
+          if (anim)
+            await sleep(t * speech);
         }
-        if(anim)
-          await sleep(t*speech);
-      }
     }
 
 
 
     // Function to draw the grid
-    function drawGrid() {
 
-      ctxbg.strokeStyle = "#aaa";
-      ctxbg.lineWidth = 1;
-      const lineSpacing = 40; // 调整每行的间距
-
-
-      ctx.lineWidth = 1;
-
-      let cyh = lineSpacing;
-      let cd = 1;
-      while (cd) {
-
-        for (let i = 1; i <= 4; i++) {
-
-          cyh += lineSpacing;
-          if (cyh > canvasbg.height) return;
-          ctxbg.beginPath();
-          ctxbg.moveTo(0, cyh);
-          ctxbg.lineTo(canvasbg.width, cyh);
-          ctxbg.stroke();
-
-        }
-        cyh += lineSpacing;
-      }
-
-    }
 
 
   },
   computed: {
-    penColor:{
+    penColor: {
       get() {
-        return  this.$store.state.local.penColor;
+        return this.$store.state.local.penColor;
       },
       set(newValue) {
-        this.saveLocal({penColor:newValue});
+        this.saveLocal({ penColor: newValue });
       },
 
-      
-    
+
+
     }
-    
+
   },
 };
 </script>
@@ -354,23 +410,28 @@ canvas {
   left: 0;
   background: #ddd;
 }
-.selected{background-color: blue;}
-.spell{
+
+.selected {
+  background-color: blue;
+}
+
+.spell {
   height: 100%;
-     width: 100%; 
-    font-size: calc(min(25vw, 25vh));
-    color:#eee;
-    z-index:-1;
-    position: absolute;
-    display: flex;
-    align-items: center;
+  width: 100%;
+  font-size: calc(min(25vw, 25vh));
+  color: #eee;
+  z-index: -1;
+  position: absolute;
+  display: flex;
+  align-items: center;
   justify-content: center;
   text-align: center;
   word-break: break-all;
   background-color: transparent;
 }
-.rotate button{
+
+.rotate button {
   transform: rotate(-90deg);
-    transform-origin: top left;
+  transform-origin: top left;
 }
 </style>
