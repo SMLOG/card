@@ -66,7 +66,7 @@ export default {
 
       ctxbg.clearRect(0, 0, canvasbg.width, canvasbg.height);
 
-      const lineSpacing = 40*(this.scale*(1+0.1)); // 调整每行的间距
+      const lineSpacing = 40*(1+this.scale*0.1); // 调整每行的间距
       console.log('lineSpacing',lineSpacing)
       ctxbg.setLineDash([10, 10]);
 

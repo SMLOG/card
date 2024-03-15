@@ -83,7 +83,8 @@
         referrerpolicy="no-referrer"
       ></audio>
     </div>
-    <div style="flex-grow: 1;position: relative;">
+    <div style="flex-grow: 1;position: relative;    display: flex;
+    flex-direction: column;">
     <div
       class="word"
       v-if="mode != 3&&mode != 4 && list.length > 0 && curIndex >= 0"
@@ -98,9 +99,8 @@
     >
       {{ list[curIndex][lan] }}
     </div>
-    <WriteDraw v-if="mode==4" :word="list[curIndex]" :lan="lan" />
 
-    <ul class="figure-list" style="text-align: center" v-if="mode!=4">
+    <ul class="figure-list" style="text-align: center" >
       <li
         v-for="(item, k) in list"
         :key="k"
@@ -180,6 +180,11 @@
         </div>
       </div>
     </div>
+    <div style="position: relative;flex-grow: 1;">
+      <WriteDraw v-if="mode==4" :word="list[curIndex]" :lan="lan" />
+    </div>
+
+
     </div>
 
     <div v-if="showGameIf" style="background: white">
