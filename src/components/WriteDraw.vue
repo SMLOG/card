@@ -10,45 +10,39 @@
       <div style="display: flex;
 justify-content: space-between;
 width: 100%;">
-<span><font-awesome-icon
-          icon="pen"
-          fixed-width
-        />
-        <input type="range" min="1" max="20" step="1" v-model.number="penWidth">
-      </span>
-      <span><font-awesome-icon
-          icon="magnifying-glass"
-          fixed-width
-        />
-        <input type="range" min="1" max="7" step="1" v-model.number="scale">
-      </span>
+        <span><font-awesome-icon icon="pen" fixed-width />
+          <input type="range" min="1" max="20" step="1" v-model.number="penWidth">
+        </span>
+        <span><font-awesome-icon icon="magnifying-glass" fixed-width />
+          <input type="range" min="1" max="7" step="1" v-model.number="scale">
+        </span>
         <input type="color" v-model="penColor">
       </div>
     </div>
-<div style="flex-grow: 1;">
-  <div id="container" ref="container">
-      <div v-if="word && maskWord && false" class="spell">
-        <div v-html="fmtWords()"></div>
+    <div style="flex-grow: 1;">
+      <div id="container" ref="container">
+        <div v-if="word && maskWord && false" class="spell">
+          <div v-html="fmtWords()"></div>
+        </div>
+        <canvas ref="canvasbg"></canvas>
+        <canvas id="maskCanvas"></canvas>
+        <canvas id="nextCanvas"></canvas>
+        <canvas ref="canvas" id="canvas" style="z-index: 1;"></canvas>
       </div>
-      <canvas ref="canvasbg"></canvas>
-      <canvas id="maskCanvas"></canvas>
-      <canvas id="nextCanvas"></canvas>
-      <canvas ref="canvas" id="canvas" style="z-index: 1;"></canvas>
     </div>
-</div>
 
     <div id="bts" style="width:100%;">
       <div style="    display: flex;
   justify-content: space-between;
   width: 100%;">
-      <a id="playBtn" @click="clickPaly()" :class="{ selected: loopPlay == 2 }">
-        <font-awesome-icon :icon="['fas', 'play']"  fixed-width />
-      </a>
-     
+        <a id="playBtn" @click="clickPaly()" :class="{ selected: loopPlay == 2 }">
+          <font-awesome-icon :icon="['fas', 'play']" fixed-width />
+        </a>
+
         <a ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">
           <font-awesome-icon :icon="['fas', 'mask']" fixed-width />
         </a>
-        <input v-model="inputText" @focus="inputText=''" style="width: 2rem;" @blur="drawGrid" />
+        <input v-model="inputText" @focus="inputText = ''" style="width: 2rem;" @blur="drawGrid" />
         <a id="clearBtn" @click="loopPlay = 0">
           <font-awesome-icon :icon="['fas', 'eraser']" fixed-width />
         </a>
@@ -61,29 +55,46 @@ width: 100%;">
 
 <script>
 import { createWorker } from 'tesseract.js';
+
+let canvas = document.getElementById("canvas");
+let maskCanvas = document.getElementById("maskCanvas");
+let nextCanvas = document.getElementById("nextCanvas");
+
+let playBtn = document.getElementById("playBtn");
+let clearBtn = document.getElementById("clearBtn");
+let ctx = null;
+let container = document.getElementById("container");
+
+
+let isRecording = false;
+let isPlaying = false;
+let recordedData = [];
+let isDrawing = false;
+let lastDrawTime = 0;
+let maskDatas = [];
+let recordedDatas = [];
+
+
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask: 0, penWidth: 5, loopPlay: 0,inputText:'' };
+    return { isMask: 0, penWidth: 5, loopPlay: 0, inputText: '' };
   },
   created() { },
   methods: {
     resizeCanvas() {
+      Array.from(container.querySelectorAll('canvas')).map(e => {
+        e.width = container.offsetWidth;
+        e.height = container.offsetHeight
+        console.log('container', container.offsetWidth, container.offsetHeight);
 
-      let container = this.$refs.container;
-Array.from(container.querySelectorAll('canvas')).map(e=>{
-  e.width = container.offsetWidth;
-  e.height = container.offsetHeight
-  console.log('container',container.offsetWidth,container.offsetHeight);
+      });
 
-});
+      if (this.local.grid)
+        this.drawGrid();
+    },
 
-if (this.local.grid)
-  this.drawGrid();
-},
     drawGrid() {
-
-      
       let canvasbg = this.$refs.canvasbg;
       let ctxbg = this.$refs.canvasbg.getContext('2d');
       ctxbg.strokeStyle = "#ddd";
@@ -91,8 +102,8 @@ if (this.local.grid)
 
       ctxbg.clearRect(0, 0, canvasbg.width, canvasbg.height);
 
-      const lineSpacing = 40*(1+this.scale*0.1); // 调整每行的间距
-      console.log('lineSpacing',lineSpacing)
+      const lineSpacing = 40 * (1 + this.scale * 0.1); // 调整每行的间距
+      console.log('lineSpacing', lineSpacing)
       ctxbg.setLineDash([10, 10]);
 
       let cy = canvasbg.height / 2;
@@ -110,6 +121,7 @@ if (this.local.grid)
       let nums = parseInt(cy / (3 * lineSpacing)) * 2 + 1;
 
       let start = cy -= parseInt(cy / (3 * lineSpacing)) * 3 * lineSpacing;
+      let offsetLeft = 20;
 
       for (let i = 0; i < nums; i++) {
         ctxbg.beginPath();
@@ -147,18 +159,14 @@ if (this.local.grid)
       ctxbg.textBaseline = 'middle';
       //ctxbg.textAlign = 'center';
       ctxbg.fillStyle = "#ddd";
-      if(this.inputText.length){
-        ctxbg.fillText(this.inputText, Math.min(lineSpacing,40), start + 1.5 * lineSpacing);
+      if (this.inputText.length) {
+        ctxbg.fillText(this.inputText, Math.min(lineSpacing, 40), start + 1.5 * lineSpacing);
 
-      }else
-      if (this.word) {
-        let text = this.word[this.lan];
-        ctxbg.fillText(text, Math.min(lineSpacing,40), start + 1.5 * lineSpacing);
-      }
-
-
-
-
+      } else
+        if (this.word) {
+          let text = this.word[this.lan];
+          ctxbg.fillText(text, offsetLeft, start + 1.5 * lineSpacing);
+        }
 
     },
     fmtWords() {
@@ -183,40 +191,31 @@ if (this.local.grid)
         this.$refs.canvasbg.style.display = value ? "" : "none";
       },
     },
-    scale:{
-      handler(value){
+    scale: {
+      handler(value) {
         console.log(value);
         this.drawGrid();
       }
     },
     word: {
-    deep: true,
-    handler(value) {
-      console.log(value)
-      this.resizeCanvas();
+      deep: true,
+      handler(value) {
+        console.log(value)
+        this.resizeCanvas();
+      }
     }
-  }
 
   },
   mounted() {
 
-    const canvas = document.getElementById("canvas");
-    const maskCanvas = document.getElementById("maskCanvas");
-    const nextCanvas = document.getElementById("nextCanvas");
+    canvas = document.getElementById("canvas");
+    maskCanvas = document.getElementById("maskCanvas");
+    nextCanvas = document.getElementById("nextCanvas");
 
-    const playBtn = document.getElementById("playBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const ctx = canvas.getContext("2d");
-    const container = document.getElementById("container");
-
-    let isRecording = false;
-    let isPlaying = false;
-    let recordedData = [];
-    let isDrawing = false;
-    let lastDrawTime = 0;
-    let maskDatas = [];
-    let recordedDatas = [];
-
+    playBtn = document.getElementById("playBtn");
+    clearBtn = document.getElementById("clearBtn");
+    ctx = canvas.getContext("2d");
+    container = document.getElementById("container");
     let vue = this;
 
     document.addEventListener('touchmove', function (event) {
@@ -233,26 +232,9 @@ if (this.local.grid)
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("touchmove", draw);
 
-
-
-    function resizeCanvas() {
-
-      
-      Array.from(container.querySelectorAll('canvas')).map(e=>{
-        e.width = container.offsetWidth;
-        e.height = container.offsetHeight
-        console.log('container',container.offsetWidth,container.offsetHeight);
-
-      });
-
-      if (vue.local.grid)
-        vue.drawGrid();
-    }
-
-    window.addEventListener("resize", resizeCanvas);
-
+    window.addEventListener("resize", this.resizeCanvas);
     // Initial resizing
-    resizeCanvas();
+    this.resizeCanvas();
 
     function reset() {
       recordedData.length = 0;
@@ -439,7 +421,7 @@ button {
   left: 0;
   flex-grow: 1;
   height: 100%;
-    width: 100%;
+  width: 100%;
 
 
 }
