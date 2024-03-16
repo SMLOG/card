@@ -159,14 +159,26 @@ export default {
       ctxbg.textBaseline = 'middle';
       //ctxbg.textAlign = 'center';
       ctxbg.fillStyle = "#ddd";
-      if (this.inputText.length) {
-        ctxbg.fillText(this.inputText, Math.min(lineSpacing, 40), start + 1.5 * lineSpacing);
+      let text = this.inputText || this.word&&this.word[this.lan];
+      if(text){
+        let chs=text.split('');
+        console.log(chs);
+        let lineNum=0;
+        for(let i=1,npos=0;i<=chs.length;i++){
+          let sub = text.substring(npos,i);
+          if(ctxbg.measureText(sub).width+2*offsetLeft>canvasbg.width ){
+            ctxbg.fillText(text.substring(npos,i-2)+"-", offsetLeft, lineNum*3*lineSpacing +start + 1.5 * lineSpacing);
+            npos=i-2;
+            lineNum++;
+            i=npos;
+            continue;
+          }
+          if(i==chs.length){
+            ctxbg.fillText(text.substring(npos,i), offsetLeft,lineNum*3*lineSpacing+ start + 1.5 * lineSpacing);
+          }
 
-      } else
-        if (this.word) {
-          let text = this.word[this.lan];
-          ctxbg.fillText(text, offsetLeft, start + 1.5 * lineSpacing);
         }
+      }
 
     },
     fmtWords() {
