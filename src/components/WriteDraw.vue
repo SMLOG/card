@@ -14,7 +14,7 @@ width: 100%;">
           <input type="range" min="1" max="20" step="1" v-model.number="penWidth">
         </span>
         <span><font-awesome-icon icon="magnifying-glass" fixed-width />
-          <input type="range" min="1" max="7" step="1" v-model.number="scale">
+          <input type="range" min="1" max="10" step="1" v-model.number="scale">
         </span>
         <input type="color" v-model="penColor">
       </div>
@@ -123,6 +123,13 @@ export default {
       let start = cy -= parseInt(cy / (3 * lineSpacing)) * 3 * lineSpacing;
       let offsetLeft = 20;
 
+      if(nums==1){
+       
+        nums = parseInt((canvasbg.height-2*offsetLeft)/(3*lineSpacing));
+        start = (canvasbg.height - (3*lineSpacing) * nums)/2;
+        cy = start;
+      }
+
       for (let i = 0; i < nums; i++) {
         ctxbg.beginPath();
         ctxbg.setLineDash([]);
@@ -167,8 +174,23 @@ export default {
         for(let i=1,npos=0;i<=chs.length;i++){
           let sub = text.substring(npos,i);
           if(ctxbg.measureText(sub).width+2*offsetLeft>canvasbg.width ){
-            ctxbg.fillText(text.substring(npos,i-2)+"-", offsetLeft, lineNum*3*lineSpacing +start + 1.5 * lineSpacing);
-            npos=i-2;
+            if(this.lan=='en'){
+             sub = text.substring(npos,i-1)+"-";
+              if(ctxbg.measureText(sub).width+2*offsetLeft<canvasbg.width){
+                npos=i-1;
+              }else{
+                sub = text.substring(npos,i-2)+"-";
+                npos=i-2;
+              }
+
+
+            }
+            else  {
+              sub = text.substring(npos,i-1);
+              npos=i-1;
+            }
+            ctxbg.fillText(sub, offsetLeft, lineNum*3*lineSpacing +start + 1.5 * lineSpacing);
+
             lineNum++;
             i=npos;
             continue;
