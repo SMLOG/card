@@ -74,6 +74,9 @@ let lastDrawTime = 0;
 let maskDatas = [];
 let recordedDatas = [];
 
+let disableTouchMove = function (event) {
+      event.preventDefault();
+    }
 
 export default {
   props: ['word', 'lan'],
@@ -217,6 +220,9 @@ export default {
       const ret = await worker.recognize(this.$refs.canvas.toDataURL());
       console.log(ret.data.text);
       await worker.terminate();
+    },
+    valid(){
+      return recordedDatas.length!=0;
     }
   },
   watch: {
@@ -241,6 +247,9 @@ export default {
     }
 
   },
+  beforeDestroy(){
+    document.removeEventListener('touchmove', disableTouchMove);
+  },
   mounted() {
 
     canvas = document.getElementById("canvas");
@@ -253,9 +262,7 @@ export default {
     container = document.getElementById("container");
     let vue = this;
 
-    document.addEventListener('touchmove', function (event) {
-      event.preventDefault();
-    }, { passive: false });
+    document.addEventListener('touchmove', disableTouchMove, { passive: false });
 
     playBtn.addEventListener("click", playAnimation);
     this.$refs.maskBtn.addEventListener("click", mask);
@@ -481,6 +488,9 @@ canvas {
   box-sizing: border-box;
 }
 
+#bts a{
+  font-size: 200%;
+}
 .selected {
   background-color: blue;
 }

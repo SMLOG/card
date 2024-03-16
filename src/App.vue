@@ -182,7 +182,7 @@
       </div>
     </div>
     <div style="position: relative;flex-grow: 1;">
-      <WriteDraw v-if="mode==4" :word="list[curIndex]" :lan="lan" />
+      <WriteDraw ref="writerDraw" v-if="mode==4" :word="list[curIndex]" :lan="lan" />
     </div>
 
 
@@ -483,7 +483,9 @@ export default {
 
       if (index == this.curIndex) {
         this.lastYesIndex = index;
-        if ((this.mode != 0 && this.mode != 3) || (this.mode == 3 && !evt)) {
+        if ((this.mode != 0 && this.mode != 3&&this.mode!=4) || (this.mode == 3 && !evt)
+        ||(this.mode==4&&this.$refs.writerDraw.valid())
+        ) {
           this.rightCn++;
           this.curAct = 1;
           this.count(item, this.count(item) + 1);
