@@ -235,6 +235,7 @@ export default {
       deep: true,
       handler(value) {
         console.log(value)
+        this.inputText='';
         this.resizeCanvas();
       }
     }
