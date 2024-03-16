@@ -16,7 +16,10 @@ width: 100%;">
         />
         <input type="range" min="1" max="20" step="1" v-model.number="penWidth">
       </span>
-      <span>+
+      <span><font-awesome-icon
+          icon="magnifying-glass"
+          fixed-width
+        />
         <input type="range" min="1" max="7" step="1" v-model.number="scale">
       </span>
         <input type="color" v-model="penColor">
@@ -38,10 +41,17 @@ width: 100%;">
       <div style="    display: flex;
   justify-content: space-between;
   width: 100%;">
-        <button id="playBtn" @click="clickPaly()" :class="{ selected: loopPlay == 2 }">Play</button>
-        <button ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">Mask</button>
-        <input v-model="inputText" @focus="inputText=''" @blur="drawGrid" />
-        <button id="clearBtn" @click="loopPlay = 0">Clear</button>
+      <a id="playBtn" @click="clickPaly()" :class="{ selected: loopPlay == 2 }">
+        <font-awesome-icon :icon="['fas', 'play']"  fixed-width />
+      </a>
+     
+        <a ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">
+          <font-awesome-icon :icon="['fas', 'mask']" fixed-width />
+        </a>
+        <input v-model="inputText" @focus="inputText=''" style="width: 2rem;" @blur="drawGrid" />
+        <a id="clearBtn" @click="loopPlay = 0">
+          <font-awesome-icon :icon="['fas', 'eraser']" fixed-width />
+        </a>
       </div>
 
     </div>
@@ -449,6 +459,9 @@ canvas {
   z-index: 1;
   left: 0;
   background: #ddd;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .selected {

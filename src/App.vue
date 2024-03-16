@@ -38,7 +38,7 @@
           :class="{ speaking: speaking }"
           icon="volume-up"
           fixed-width
-        />Replay
+        />
       </span>
       <span
         v-if="true"
@@ -52,7 +52,7 @@
           :class="{ speaking: speaking }"
           icon="step-forward"
           fixed-width
-        />Next</span
+        /></span
       >
       <span style="margin-left: 10px">
         <select v-model="mode" @change="saveLocal({mode:mode})" :disabled="local.lock" >
@@ -73,7 +73,7 @@
         }}){{ syning ? "..." : "" }}</span
       >
       <span style="margin-left: 10px" @click.stop="showSetting = 1">
-        <font-awesome-icon icon="gear" fixed-width />Setting</span
+        <font-awesome-icon icon="gear" fixed-width /></span
       >
       <audio
         controls
@@ -105,6 +105,7 @@
         v-for="(item, k) in list"
         :key="k"
         class="card"
+        :style="{width:mode==4?'50%':''}"
         :class="{ click: clickIndex == k, ready: !selected }"
         @click="select(k, item, $event)"
       >
