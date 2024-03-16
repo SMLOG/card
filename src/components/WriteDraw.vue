@@ -42,7 +42,7 @@ width: 100%;">
         <a ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">
           <font-awesome-icon :icon="['fas', 'mask']" fixed-width />
         </a>
-        <input v-model="inputText" @focus="inputText = ''" style="width: 2rem;" @blur="drawGrid" />
+        <input v-model="inputText" ref="inputText" @focus="inputText = ''" style="width: 2rem;" @blur="drawGrid" @keyup.enter="$refs.inputText.blur()" />
         <a id="clearBtn" @click="loopPlay = 0">
           <font-awesome-icon :icon="['fas', 'eraser']" fixed-width />
         </a>
