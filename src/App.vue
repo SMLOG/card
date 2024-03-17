@@ -60,6 +60,7 @@
           <option value="0">0.Read</option>
           <option value="3">3.Write</option>
           <option value="4">4.Write2</option>
+          <option value="5">5.Write5</option>
         </select></span
       >
       <span @click="refresh()" style="margin-left: 10px">
@@ -183,6 +184,7 @@
     </div>
     <div style="position: relative;flex-grow: 1;">
       <WriteDraw ref="writerDraw" v-if="mode==4" :word="list[curIndex]" :lan="lan" />
+      <WriteDraw5 ref="writerDraw5" v-if="mode==5" :word="list[curIndex]" :lan="lan" />
     </div>
 
 
@@ -233,6 +235,7 @@ import pako from "pako";
 import $ from "jquery";
 //import dictList from "./dict.json";
 import WriteDraw from './components/WriteDraw.vue';
+import WriteDraw5 from './components/WriteDraw5.vue';
 import GameList from "./components/GameList.vue";
 import Setting from "./Setting.vue";
 export default {
@@ -275,7 +278,7 @@ export default {
       showSetting: 0,
     };
   },
-  components: { GameList, Setting,WriteDraw },
+  components: { GameList, Setting,WriteDraw,WriteDraw5 },
   mounted: function () {
     let mya = $(
       `<iframe id="myaudio" style="display:none;" referrerpolicy="no-referrer" />`
