@@ -242,6 +242,8 @@ export default {
       handler(value) {
         console.log(value)
         this.inputText='';
+        recordedDatas.length=0;
+        maskDatas.length=0;
         this.resizeCanvas();
       }
     }
