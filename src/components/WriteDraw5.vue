@@ -21,8 +21,11 @@ width: 100%;">
     </div>
     <div style="flex-grow: 1;">
       <div id="container" ref="container">
-        <svg id="svg" viewBox="0 0 348 348" style="width:348px;height:348px;" v-show="false"></svg>
-        <svg id="svg1" viewBox="0 0 348 348" style="width:348px;height:348px;"></svg>
+        <div >
+          <svg id="svg" viewBox="0 0 348 348" style="width:348px;height:348px;" v-show="false"></svg>
+          <svg id="svg1" viewBox="0 0 348 348" style="width:348px;height:348px;"></svg>
+        </div>
+
       </div>
     </div>
 
@@ -33,7 +36,6 @@ width: 100%;">
         <a id="playBtn" :class="{ selected: loopPlay == 2 }">
           <font-awesome-icon :icon="['fas', 'play']" fixed-width />
         </a>
-
         <a ref="maskBtn" @click="isMask = !isMask, loopPlay = 0" :class="{ selected: isMask }">
           <font-awesome-icon :icon="['fas', 'mask']" fixed-width />
         </a>
@@ -43,9 +45,7 @@ width: 100%;">
           <font-awesome-icon :icon="['fas', 'eraser']" fixed-width />
         </a>
       </div>
-
     </div>
-
   </div>
 </template>
 
@@ -60,27 +60,37 @@ export default {
   },
   created() { },
   methods: {
+    success(fail){
+      if(!fail)
+        this.$emit('next');
+      
+    },
+    loadWord() {
+      if (this.word) {
+
+        jsObj = initStroke($, this.word[this.lan],this.success);
+      }
+
+    },
     clear() {
       jsObj.pane2.reset();
     }
   },
   watch: {
+    word: {
+      deep: true,
+      handler(value) {
+        console.log(value)
+        this.loadWord();
+
+      }
+    }
+
   },
   beforeDestroy() {
   },
   mounted() {
-    let testUrl = 'https://stroke-order.learningweb.moe.edu.tw/provideStrokeInfo.do?ucs=5B78&useAlt=0';
-
-    jsObj = initStroke($, testUrl);
-    fetch(testUrl)
-      .then(response => response.text())
-      .then(xmlData => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
-        let strokes = xmlDoc.getElementsByTagName('Stroke')
-        console.log(strokes);
-
-      });
+    this.loadWord();
 
   },
   computed: {

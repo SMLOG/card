@@ -184,7 +184,7 @@
     </div>
     <div style="position: relative;flex-grow: 1;">
       <WriteDraw ref="writerDraw" v-if="mode==4" :word="list[curIndex]" :lan="lan" />
-      <WriteDraw5 ref="writerDraw5" v-if="mode==5" :word="list[curIndex]" :lan="lan" />
+      <WriteDraw5 ref="writerDraw5" v-if="mode==5" :word="list[curIndex]" :lan="lan" @next="select(0, list[0], $event)" />
     </div>
 
 

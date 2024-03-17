@@ -1,8 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-
-
-export function initStroke($,url) {
+export function initStroke($,url,doSuccess) {
 
     let ret={};
 
@@ -830,44 +828,72 @@ export function initStroke($,url) {
   //////------------
 
   
-function requestXml(url, penWidth) {
-	if(url !== null || url !== '') {
-		$.ajax({
-			'url' : url,
-			'error' : function() {
-			},
-			'success' : function(xml) {
-				var builder = new StrokeDescriptorBuilder();
-				var commandTable = new Object();
-				commandTable['MoveTo'] = builder.buildMoveTo;
-				commandTable['LineTo'] = builder.buildLineTo;
-				commandTable['QuadTo'] = builder.buildQuadBezierTo;
-				commandTable['CubicTo'] = builder.buildCubicBezierTo;
-				var strokeNodeList = $(xml).find('Stroke');
-				var strokeDescriptorList = new Array();
-				strokeNodeList.each(function() {
-					builder.reset();
-					var outlineNode = $(this).children('Outline');
-					var trackNode = $(this).children('Track');
-					var outlineChilds = outlineNode.children();
-					outlineChilds.each(function() {
-						var builderFunc = commandTable[$(this).prop('tagName')];
-						if(builderFunc != null) {
-							builderFunc.call(builder, $(this));
-						} else {
-							console.log('Command [ ' + $(this).prop('tagName') + ' ] not found !');
-						}
-					});
-					var trackNodeChilds = trackNode.children();
-					trackNodeChilds.each(function() {
-						builder.buildTrack($(this));
-					});
-					var strokeDescriptor = builder.getStrokeDescriptor();
-					strokeDescriptorList.push(strokeDescriptor);
-				});
-				onStrokeDefinationComplete(strokeDescriptorList, penWidth);
-			}
-		});
+async function  requestXml(word, penWidth) {
+
+
+	if(word !== null || word !== '') {
+
+    let code = word.split('')[0].charCodeAt(0).toString(16).toUpperCase();
+    let urls=[
+      'https://stroke-order.learningweb.moe.edu.tw/provideStrokeInfo.do?ucs=' + code + '&useAlt=0',
+      "https://g0v.github.io/zh-stroke-data/utf8/" + code+ ".xml"]
+
+      for(let i=0;i<urls.length;i++){
+        let url= urls[i];
+        try{
+        await new Promise((resolve,reject)=>{
+          $.ajax({
+              'url' : url,
+              'error' : function() {
+              },
+              'success' : function(xml) {
+  
+                //  if(!("string" == typeof xml && 0 < xml.length && xml.match(/<Stroke>/i))){
+               //       return reject();
+                //  }
+  
+                  var builder = new StrokeDescriptorBuilder();
+                  var commandTable = new Object();
+                  commandTable['MoveTo'] = builder.buildMoveTo;
+                  commandTable['LineTo'] = builder.buildLineTo;
+                  commandTable['QuadTo'] = builder.buildQuadBezierTo;
+                  commandTable['CubicTo'] = builder.buildCubicBezierTo;
+                  var strokeNodeList = $(xml).find('Stroke');
+                  var strokeDescriptorList = new Array();
+                  strokeNodeList.each(function() {
+                      builder.reset();
+                      var outlineNode = $(this).children('Outline');
+                      var trackNode = $(this).children('Track');
+                      var outlineChilds = outlineNode.children();
+                      outlineChilds.each(function() {
+                          var builderFunc = commandTable[$(this).prop('tagName')];
+                          if(builderFunc != null) {
+                              builderFunc.call(builder, $(this));
+                          } else {
+                              console.log('Command [ ' + $(this).prop('tagName') + ' ] not found !');
+                          }
+                      });
+                      var trackNodeChilds = trackNode.children();
+                      trackNodeChilds.each(function() {
+                          builder.buildTrack($(this));
+                      });
+                      var strokeDescriptor = builder.getStrokeDescriptor();
+                      strokeDescriptorList.push(strokeDescriptor);
+                  });
+                  onStrokeDefinationComplete(strokeDescriptorList, penWidth);
+                  resolve();
+              }
+          });
+      });
+      break;
+    }catch(error){
+      console.error(error);
+    }
+      }
+
+   
+
+
 	} else {
 		console.log('url[' + url + '] is null.');
 	}
@@ -906,6 +932,7 @@ function onStrokeDefinationComplete(strokeDescriptorList, penWidth) {
 	pane2.strokeWidth = penWidth;
 
     ret.pane2=pane2;
+    ret.panel=panel;
 
 	demo = new Demo(panel, strokeDescriptorList);
 	demo.addEventListener('STATUS_CHANGED', onStatusChanged);
@@ -926,6 +953,7 @@ function onStrokeDefinationComplete(strokeDescriptorList, penWidth) {
 
 	pane2.addEventListener('CORRECT', function(src) {
 
+        doSuccess&&doSuccess();
 		$(correctImg).attr('opacity', 1);
 		step = -0.01;
 		chTime = 0;
