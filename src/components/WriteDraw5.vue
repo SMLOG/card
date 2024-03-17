@@ -50,6 +50,9 @@ width: 100%;">
 </template>
 
 <script>
+import * as OpenCC from 'opencc-js';
+const converter = OpenCC.Converter({ from: 'cn', to: 'hk' });
+
 /* eslint-disable */
 let jsObj;
 import { initStroke } from './stroke';
@@ -66,9 +69,12 @@ export default {
       
     },
     loadWord() {
-      if (this.word) {
 
-        jsObj = initStroke($, this.word[this.lan],this.success);
+      
+      if (this.word) {
+        
+        const traditionalText = converter(this.word[this.lan]);
+        jsObj = initStroke($, traditionalText,this.success);
       }
 
     },
