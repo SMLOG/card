@@ -106,7 +106,7 @@
         v-for="(item, k) in list"
         :key="k"
         class="card"
-        :style="{width:mode==4?'50%':''}"
+        :style="{width:mode>=4?'50%':''}"
         :class="{ click: clickIndex == k, ready: !selected }"
         @click="select(k, item, $event)"
       >

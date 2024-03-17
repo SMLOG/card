@@ -15,11 +15,9 @@ import {
 library.add(fas, far, fab);
 import "./registerServiceWorker";
 
-import $ from "jquery";
 
 import store from './store';
 import mixin from "./mixin";
-window.$ = $;
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 Vue.component("font-awesome-layers", FontAwesomeLayers);
 Vue.component("font-awesome-layers-text", FontAwesomeLayersText);
