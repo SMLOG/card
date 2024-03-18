@@ -59,18 +59,23 @@ import { initStroke } from './stroke';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask: 0, penWidth: 5, loopPlay: 0, inputText: '' };
+    return { isMask: 0, penWidth: 5, loopPlay: 0, inputText: '',bingo:0 };
   },
   created() { },
   methods: {
+    valid(){
+      return this.bingo;
+    },
     success(fail){
-      if(!fail)
+      if(!fail){
+        this.bingo=1;
         this.$emit('next');
+      }
       
     },
     loadWord() {
 
-      
+      this.bingo=0;
       if (this.word) {
         
         const traditionalText = converter(this.word[this.lan]);

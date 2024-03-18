@@ -88,7 +88,7 @@
     flex-direction: column;">
     <div
       class="word"
-      v-if="mode != 3&&mode != 4 && list.length > 0 && curIndex >= 0"
+      v-if="mode != 3&&mode != 4 &&mode!=5 && list.length > 0 && curIndex >= 0"
       style="
         color: dodgerblue;
         font-size: 300%;
@@ -357,9 +357,7 @@ export default {
         if (curpwd == pwd) {
           this.startShowGame(minus);
         }
-      } else {
-        this.startShowGame(minus);
-      }
+      } 
     },
     async refresh() {
       let self = this;
@@ -486,8 +484,8 @@ export default {
 
       if (index == this.curIndex) {
         this.lastYesIndex = index;
-        if ((this.mode != 0 && this.mode != 3&&this.mode!=4) || (this.mode == 3 && !evt)
-        ||(this.mode==4&&this.$refs.writerDraw.valid())
+        if ((this.mode != 0 && this.mode != 3&&this.mode!=4 && this.mode!=5) || (this.mode == 3 && !evt)
+        ||(this.mode==4&&this.$refs.writerDraw.valid() || this.mode==5&&this.$refs.writerDraw5.valid())
         ) {
           this.rightCn++;
           this.curAct = 1;
