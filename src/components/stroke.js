@@ -371,14 +371,14 @@ var ExercisePanel = function (id, strokeDescriptorList, writable) {
   this._writable = writable != null && writable;
   this._prevX = 0;
   this._prevY = 0;
-  this.strokeWidth = ($("#" + id).width() / 2048) * 200;
+  this.strokeWidth = ($(id).width() / 2048) * 200;
   this.listenerTable = new Array();
   this.fixd_ratio = 1;
 
   var me = this;
 
   var svgOutlineTag = $('<svg id="outline_' + this.uuid + '"></svg>');
-  $("#" + id).append(svgOutlineTag);
+  $(id).append(svgOutlineTag);
   svgOutlineTag.svg(function (svgRoot) {
     svgRoot.rect(0, 0, "100%", "100%", {
       strokeWidth: 1,
@@ -389,7 +389,7 @@ var ExercisePanel = function (id, strokeDescriptorList, writable) {
     var outlineGroup = svgRoot.group("outline_gp_" + me.uuid);
     me.outline = outlineGroup;
 
-    var size = $("#" + me.id).width();
+    var size = $(id).width();
     var half = size / 2;
 
     var datumLineGroup = svgRoot.group("outline_gp_" + me.uuid);
@@ -418,7 +418,7 @@ var ExercisePanel = function (id, strokeDescriptorList, writable) {
 
   var svgFillTag = $('<svg id="fill_' + this.uuid + '"></svg>');
   this.mainTag = svgFillTag;
-  $("#" + id).append(svgFillTag);
+  $(id).append(svgFillTag);
   svgFillTag.svg(function (svgRoot) {
     var defs = svgRoot.defs("defs_" + me.uuid);
     //XXX
@@ -437,38 +437,33 @@ var ExercisePanel = function (id, strokeDescriptorList, writable) {
     me.strokeArea = strokeAreaGroup;
     me.svgRoot = svgRoot;
 
-    $("#" + me.id).unbind('mousedown').bind("mousedown", function (event) {
-      var x = (event.pageX - $("#" + me.id).offset().left) / me.fixd_ratio;
-      var y = (event.pageY - $("#" + me.id).offset().top) / me.fixd_ratio;
+    $(id).unbind('mousedown').bind("mousedown", function (event) {
+      var x = (event.pageX - $(me.id).offset().left) / me.fixd_ratio;
+      var y = (event.pageY - $(me.id).offset().top) / me.fixd_ratio;
       me.onPenDown(x, y);
-    });
-    $("#" + me.id).unbind('mouseup').bind("mouseup", function (event) {
-      var x = (event.pageX - $("#" + me.id).offset().left) / me.fixd_ratio;
-      var y = (event.pageY - $("#" + me.id).offset().top) / me.fixd_ratio;
+    }).unbind('mouseup').bind("mouseup", function (event) {
+      var x = (event.pageX - $(me.id).offset().left) / me.fixd_ratio;
+      var y = (event.pageY - $(me.id).offset().top) / me.fixd_ratio;
       me.onPenUp(x, y);
-    });
-    $("#" + me.id).unbind('mousemove').bind("mousemove", function (event) {
-      var x = (event.pageX - $("#" + me.id).offset().left) / me.fixd_ratio;
-      var y = (event.pageY - $("#" + me.id).offset().top) / me.fixd_ratio;
+    }).unbind('mousemove').bind("mousemove", function (event) {
+      var x = (event.pageX - $(me.id).offset().left) / me.fixd_ratio;
+      var y = (event.pageY - $(me.id).offset().top) / me.fixd_ratio;
       me.onPenMove(x, y);
-    });
-    $("#" + me.id).unbind('touchstart').bind("touchstart", function (event) {
+    }).unbind('touchstart').bind("touchstart", function (event) {
       event.originalEvent.preventDefault();
       var touch = event.originalEvent.touches[0];
-      var x = touch.pageX - $("#" + me.id).offset().left;
-      var y = touch.pageY - $("#" + me.id).offset().top;
-      var r = parseFloat($("#svg1")[0].getBBox().width / $("#svg1").width());
+      var x = touch.pageX - $(me.id).offset().left;
+      var y = touch.pageY - $(me.id).offset().top;
+      var r = parseFloat($($(id))[0].getBBox().width / $($(id)).width());
       me.onPenDown(x * r, y * r);
-    });
-    $("#" + me.id).unbind('touchmove').bind("touchmove", function (event) {
+    }).unbind('touchmove').bind("touchmove", function (event) {
       event.originalEvent.preventDefault();
       var touch = event.originalEvent.touches[0];
-      var x = touch.pageX - $("#" + me.id).offset().left;
-      var y = touch.pageY - $("#" + me.id).offset().top;
-      var r = parseFloat($("#svg1")[0].getBBox().width / $("#svg1").width());
+      var x = touch.pageX - $(me.id).offset().left;
+      var y = touch.pageY - $(me.id).offset().top;
+      var r = parseFloat($($(id))[0].getBBox().width / $($(id)).width());
       me.onPenMove(x * r, y * r);
-    });
-    $("#" + me.id).unbind('touchend').bind("touchend", function (event) {
+    }).unbind('touchend').bind("touchend", function (event) {
       event.originalEvent.preventDefault();
       me.onPenUp(0, 0);
     });
@@ -850,7 +845,7 @@ async function requestXml(word, penWidth, onStrokeDefinationComplete) {
   }
 }
 
-export function initStroke($, url, doSuccess) {
+export function initStroke($, url, doSuccess,svg,svg1) {
   let ret = {};
 
   let str_Url = "https://stroke-order.learningweb.moe.edu.tw/";
@@ -868,12 +863,12 @@ export function initStroke($, url, doSuccess) {
   function onStrokeDefinationComplete(strokeDescriptorList, penWidth) {
     for (var loop = 0; loop < strokeDescriptorList.length; loop++) {
       strokeDescriptorList[loop].transformScale(
-        $("#svg").width() / 2048,
-        $("#svg").width() / 1792
+        $(svg).width() / 2048,
+        $(svg).width() / 1792
       );
     }
-    let panel = new ExercisePanel("svg", strokeDescriptorList);
-    let pane2 = new ExercisePanel("svg1", strokeDescriptorList, true);
+    let panel = new ExercisePanel(svg, strokeDescriptorList);
+    let pane2 = new ExercisePanel(svg1, strokeDescriptorList, true);
     panel.strokeWidth = penWidth;
     pane2.strokeWidth = penWidth;
 
@@ -883,8 +878,8 @@ export function initStroke($, url, doSuccess) {
     let demo = new Demo(panel, strokeDescriptorList);
     demo.addEventListener("STATUS_CHANGED", onStatusChanged);
 
-    $("#svg1").svg(function (svgRoot) {
-      var width = $("#svg1").width();
+    $(svg1).svg(function (svgRoot) {
+      var width = $(svg1).width();
       if (correctImg == null) {
         correctImg = svgRoot.image(
           0,
@@ -960,7 +955,11 @@ export function initStroke($, url, doSuccess) {
     });
     pane2.setAutoTip(true);
 
+    try{
     demo.start();
+  }catch(error){
+    doSuccess&&doSuccess(0);
+  }
   }
 
   requestXml(url, 44,onStrokeDefinationComplete);

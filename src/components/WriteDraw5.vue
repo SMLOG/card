@@ -20,10 +20,9 @@ width: 100%;">
       </div>
     </div>
     <div style="flex-grow: 1;">
-      <div id="container" ref="container">
-        <div >
-          <svg id="svg" viewBox="0 0 348 348" style="width:348px;height:348px;" v-show="false"></svg>
-          <svg id="svg1" viewBox="0 0 348 348" style="width:348px;height:348px;"></svg>
+      <div id="container" ref="container" style="display: flex;overflow: auto;flex-wrap: wrap;">
+        <div v-for="(w,i) in words" :key="i">
+          <Hanzi :hanzi="w.w" @success="success(i,w)"/>
         </div>
 
       </div>
@@ -50,27 +49,32 @@ width: 100%;">
 </template>
 
 <script>
+import Hanzi from './Hanzi.vue';
+
 import * as OpenCC from 'opencc-js';
 const converter = OpenCC.Converter({ from: 'cn', to: 'hk' });
 
 /* eslint-disable */
-let jsObj;
-import { initStroke } from './stroke';
 export default {
   props: ['word', 'lan'],
   data() {
-    return { isMask: 0, penWidth: 5, loopPlay: 0, inputText: '',bingo:0 };
+    return { isMask: 0, penWidth: 5, loopPlay: 0, inputText: '',bingo:0 ,words:[]};
   },
+  components: { Hanzi },
+
   created() { },
   methods: {
     valid(){
       return this.bingo;
     },
-    success(fail){
-      if(!fail){
+    success(i){
+      this.words[i].ok=1;
+      if(this.words.filter(e=>!e.ok).length==0)
+      {
         this.bingo=1;
         this.$emit('next');
       }
+
       
     },
     loadWord() {
@@ -79,12 +83,12 @@ export default {
       if (this.word) {
         
         const traditionalText = converter(this.word[this.lan]);
-        jsObj = initStroke($, traditionalText,this.success);
+        this.words.length=0;
+        this.words.push(...traditionalText.split('').map(e=>{return {w:e,ok:0}}));
       }
 
     },
     clear() {
-      jsObj.pane2.reset();
     }
   },
   watch: {
@@ -95,6 +99,14 @@ export default {
         this.loadWord();
 
       }
+    },
+    inputText(value){
+      if(value){
+        const traditionalText = converter(value);
+        this.words.length=0;
+        this.words.push(...traditionalText.split('').map(e=>{return {w:e,ok:0}}));
+      }else this.loadWord();
+
     }
 
   },
