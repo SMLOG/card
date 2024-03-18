@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="items">
     <div>
       <a style="cursor: pointer" @click="refreshCache()">Refresh Cache</a>
     </div>
@@ -137,5 +137,8 @@ label {
   display: inline-block;
   border-bottom: 1px solid white;
   margin-right: 5px;
+}
+.items > div {
+  margin: 10px;
 }
 </style>
